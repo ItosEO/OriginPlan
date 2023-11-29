@@ -39,22 +39,31 @@ private val LightColorScheme = lightColorScheme(
 
 @Composable
 fun Study_kotlinTheme(
+        // 是否处于暗色模式
         darkTheme: Boolean = isSystemInDarkTheme(),
+
         // Dynamic color is available on Android 12+
+        // 是否支持动态颜色
         dynamicColor: Boolean = true,
+        // 内容
         content: @Composable () -> Unit
 ) {
+    // 根据是否支持动态颜色，以及当前系统版本，确定颜色方案
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
+            // 如果是暗色模式，则使用动态暗色方案，否则使用动态亮色方案
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+    // 获取当前视图
     val view = LocalView.current
+    // 如果不是编辑模式
     if (!view.isInEditMode) {
+        // 添加一个副作用，设置状态栏颜色和外观
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.primary.toArgb()
@@ -62,6 +71,7 @@ fun Study_kotlinTheme(
         }
     }
 
+    // 设置颜色方案、类型方案和内容
     MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,

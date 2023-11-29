@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Study_kotlin"
+rootProject.name = "OriginPlan"
 include(":app")
