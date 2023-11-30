@@ -6,6 +6,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,8 +49,8 @@ data class AppInfo(
 )
 
 val pkglist: List<AppInfo> = listOf(
-    AppInfo("vivoqwk", "com.itos.vivothermal"),
-    AppInfo("vivoopt", "com.itos.optizimation"),
+    AppInfo("vivoqwk", "bin.mt.plus.canary"),
+    //AppInfo("vivoopt", "com.itos.optizimation"),
 )
 
 @Composable
@@ -56,6 +58,7 @@ fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            //.heightIn(min = 48.dp)
             .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
@@ -127,8 +130,18 @@ fun AppListScreen(context: Context) {
             )
         }
     ) {
-        AppList(appList = appList)
+        Column {
+            // TopAppBar
+            TopAppBar(
+                title = { Text(text = "原计划") },
+                // backgroundColor = MaterialTheme.colorScheme.primary
+            )
+
+            // AppList
+            AppList(appList = appList)
+        }
     }
+
 }
 
 @Composable
@@ -143,8 +156,15 @@ fun generateAppList(context: Context): List<AppInfo> {
         appinfo.isDisabled = isAppDisabled(context, appinfo.appPkg)
         appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
     }
-
-    return pkglist
+    val testlist: List<AppInfo> = List(2) { index ->
+        AppInfo(
+            appName = "App $index",
+            appPkg = "com.example.app$index",
+            isDisabled = index % 2 == 0
+        )
+    }
+    Log.d("列表项", pkglist.toString()+"\n"+testlist.toString())
+    return testlist
 }
 
 
@@ -156,15 +176,17 @@ fun isAppDisabled(context: Context, appPackageName: String): Boolean {
             packageManager.getApplicationEnabledSetting(appPackageName)
 
         // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
-        return applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED ||
-                applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
-
+        if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+            return true
+        } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
+            return false
+        }
     } catch (e: PackageManager.NameNotFoundException) {
         // 如果找不到应用信息，也可以视为应用被停用
         return true
     }
+    return true
 }
-
 class MainActivity : ComponentActivity() {
     val context: Context = this
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -176,7 +198,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    SetTitle("原计划")
+                    // SetTitle("原计划")
                     AppListContent()
                 }
             }
