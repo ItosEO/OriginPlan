@@ -1,4 +1,4 @@
-package com.itos.study_kotlin.ui.theme
+package com.itos.originplan.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

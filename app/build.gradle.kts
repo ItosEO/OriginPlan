@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.itos.study_kotlin"
+    namespace = "com.itos.originplan"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.itos.study_kotlin"
+        applicationId = "com.itos.originplan"
         minSdk = 29
         targetSdk = 34
         versionCode = 1

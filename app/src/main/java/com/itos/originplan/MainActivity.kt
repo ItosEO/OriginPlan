@@ -1,6 +1,9 @@
-package com.itos.study_kotlin
+package com.itos.originplan
 
 import android.annotation.SuppressLint
+import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -30,16 +33,24 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.itos.study_kotlin.ui.theme.Study_kotlinTheme
+import com.itos.originplan.ui.theme.Study_kotlinTheme
+
 
 data class AppInfo(
-    val appName: String,
+    var appName: String,
     val appPkg: String,
-    var isDisabled: Boolean
+    var isDisabled: Boolean = false
 )
+
+val pkglist: List<AppInfo> = listOf(
+    AppInfo("vivoqwk", "com.itos.vivothermal"),
+    AppInfo("vivoopt", "com.itos.optizimation"),
+)
+
 @Composable
 fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
     Row(
@@ -77,7 +88,18 @@ fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
 }
 
 
+fun getAppNameByPackageName(context: Context, packageName: String): String {
+    val packageManager: PackageManager = context.packageManager
+    val applicationInfo: ApplicationInfo? = try {
+        packageManager.getApplicationInfo(packageName, 0)
+    } catch (e: PackageManager.NameNotFoundException) {
+        null
+    }
 
+    return applicationInfo?.let {
+        packageManager.getApplicationLabel(it).toString()
+    } ?: "Unknown App"
+}
 
 @Composable
 fun AppList(appList: List<AppInfo>) {
@@ -94,13 +116,13 @@ fun AppList(appList: List<AppInfo>) {
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppListScreen() {
-    val appList = remember { generateAppList() }
+fun AppListScreen(context: Context) {
+    val appList = remember { generateAppList(context) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "App List") },
+                title = { Text(text = "原计划") },
                 // backgroundColor = MaterialTheme.colorScheme.primary
             )
         }
@@ -111,24 +133,40 @@ fun AppListScreen() {
 
 @Composable
 fun AppListContent() {
-    AppListScreen()
+    AppListScreen(LocalContext.current)
 }
 
-fun generateAppList(): List<AppInfo> {
+fun generateAppList(context: Context): List<AppInfo> {
     // 这里添加你的应用信息
-   // 返回一个长度为10的列表，其中包含10个AppInfo对象
-    return List(10) { index ->
-        AppInfo(
-            // 根据索引值，生成不同的应用名称
-            appName = "App $index",
-            // 根据索引值，生成不同的应用包名
-            appPkg = "com.example.app$index",
-            // 根据索引值，判断应用是否被禁用
-            isDisabled = index % 2 == 0
-        )
+    // 返回一个长度为10的列表，其中包含10个AppInfo对象
+    for (appinfo in pkglist) {
+        appinfo.isDisabled = isAppDisabled(context, appinfo.appPkg)
+        appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
+    }
+
+    return pkglist
+}
+
+
+fun isAppDisabled(context: Context, appPackageName: String): Boolean {
+    val packageManager: PackageManager = context.packageManager
+
+    try {
+        val applicationEnabledSetting: Int =
+            packageManager.getApplicationEnabledSetting(appPackageName)
+
+        // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
+        return applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED ||
+                applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT
+
+    } catch (e: PackageManager.NameNotFoundException) {
+        // 如果找不到应用信息，也可以视为应用被停用
+        return true
     }
 }
+
 class MainActivity : ComponentActivity() {
+    val context: Context = this
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -144,6 +182,7 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
 }
 
 @Composable
@@ -152,7 +191,9 @@ fun SetTitle(text: String) {
         text = text,
         style = MaterialTheme.typography.titleLarge,
         textAlign = TextAlign.Center,
-        modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center)
+        modifier = Modifier
+            .fillMaxSize()
+            .wrapContentSize(Alignment.Center)
     )
 }
 
