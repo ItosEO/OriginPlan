@@ -224,6 +224,8 @@ class MainActivity : ComponentActivity() {
 
     fun test() {
         Toast.makeText(context, "test", Toast.LENGTH_SHORT).show()
+        //TODO 在这里修改isDisabled
+        //TODO 加入Shizuku支持
     }
 
 
