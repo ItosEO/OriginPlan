@@ -43,7 +43,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.itos.originplan.ui.theme.Study_kotlinTheme
-
+import rikka.shizuku.Shizuku
+import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 
 data class AppInfo(
     var appName: String,
@@ -58,155 +59,11 @@ val pkglist: List<AppInfo> = listOf(
     AppInfo("vivoopt", "com.itos.optzimiation"),
 )
 
-@Composable
-fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
-    //让 compose监听这个的变化
-    var isDisabled by remember { mutableStateOf(appInfo.isDisabled) }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 左边显示应用名称
-        Column {
-            Text(text = appInfo.appName, style = MaterialTheme.typography.bodyMedium)
-            Text(text = appInfo.appPkg, style = MaterialTheme.typography.bodySmall)
-        }
 
-        // 中间显示禁用状态文本
-        Text(
-            text = if (isDisabled) "Disabled" else "Enabled",
-            color = if (isDisabled) Color.Red else Color.Green,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(end = 16.dp)
-        )
-
-        // 右边是一个按钮
-        IconButton(
-            onClick = { isDisabled = !isDisabled; onToggle() }
-        ) {
-            Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
-            val icon: ImageVector = if (appInfo.isExist && isDisabled) {
-                Icons.Default.Check
-            } else if (appInfo.isExist){
-                Icons.Default.Close
-            } else {
-                Icons.Default.Warning
-            }
-            // icon = if (isDisabled) Icons.Default.Check else Icons.Default.Close
-            Icon(imageVector = icon, contentDescription = if (isDisabled) "Enable" else "Disable")
-        }
-    }
-}
-
-
-fun getAppNameByPackageName(context: Context, packageName: String): String {
-    val packageManager: PackageManager = context.packageManager
-    val applicationInfo: ApplicationInfo? = try {
-        packageManager.getApplicationInfo(packageName, 0)
-    } catch (e: PackageManager.NameNotFoundException) {
-        null
-    }
-
-    return applicationInfo?.let {
-        packageManager.getApplicationLabel(it).toString()
-    } ?: "Unknown App"
-}
-
-@Composable
-fun AppList(appList: List<AppInfo>, onToggle: () -> Unit) {
-    LazyColumn {
-        items(appList) { appInfo ->
-            AppListItem(
-                appInfo = appInfo,
-                onToggle = onToggle
-            )
-        }
-    }
-}
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AppListScreen(context: Context, onToggle: () -> Unit) {
-    val appList = remember { generateAppList(context) }
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "OriginPlan") },
-//                 backgroundColor = MaterialTheme.colorScheme.primary
-            )
-        }
-    ) {
-        Column {
-            // TopAppBar
-            TopAppBar(
-                title = { Text(text = "OriginPlan") },
-                // backgroundColor = MaterialTheme.colorScheme.primary
-            )
-
-            // AppList
-            AppList(appList = appList, onToggle)
-        }
-    }
-
-}
-
-@Composable
-fun AppListContent(onToggle: () -> Unit) {
-    AppListScreen(LocalContext.current, onToggle)
-}
-
-fun generateAppList(context: Context): List<AppInfo> {
-    // 这里添加你的应用信息
-    // 返回一个长度为10的列表，其中包含10个AppInfo对象
-    for (appinfo in pkglist) {
-        a = isAppDisabled(context, appinfo.appPkg)
-        if (a != null) {
-            appinfo.isDisabled = a as Boolean
-        } else {
-            appinfo.isDisabled = false
-            appinfo.isExist=false
-        }
-        appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
-    }
-    val testlist: List<AppInfo> = List(2) { index ->
-        AppInfo(
-            appName = "App $index",
-            appPkg = "com.example.app$index",
-            isDisabled = index % 2 == 0
-        )
-    }
-    Log.d("列表项", pkglist.toString() + "\n" + testlist.toString())
-    return pkglist
-}
-
-
-fun isAppDisabled(context: Context, appPackageName: String): Boolean? {
-    val packageManager: PackageManager = context.packageManager
-
-    try {
-        val applicationEnabledSetting: Int =
-            packageManager.getApplicationEnabledSetting(appPackageName)
-
-        // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
-        if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
-            return true
-        } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
-            return false
-        }
-    } catch (e: Exception) {
-        // 如果找不到应用信息，也可以视为应用被停用
-        return null
-    }
-    return true
-}
 
 class MainActivity : ComponentActivity() {
     private val context: Context = this
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -220,8 +77,168 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        val SHIZUKU_PERMISSION_REQUEST_CODE=13
+        if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_DENIED) {
+            Shizuku.addRequestPermissionResultListener { requestCode, grantResult ->
+                    requestCode == SHIZUKU_PERMISSION_REQUEST_CODE && grantResult == PackageManager.PERMISSION_GRANTED
+            }
+            Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE)
+        } else {
+            //viewModel.isGranted.value = true
+        }
+        //Shizuku.addRequestPermissionResultListener(REQUEST_PERMISSION_RESULT_LISTENER);
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        //Shizuku.removeRequestPermissionResultListener(REQUEST_PERMISSION_RESULT_LISTENER);
+    }
+    @Composable
+    fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
+        //让 compose监听这个的变化
+        var isDisabled by remember { mutableStateOf(appInfo.isDisabled) }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 左边显示应用名称
+            Column {
+                Text(text = appInfo.appName, style = MaterialTheme.typography.bodyMedium)
+                Text(text = appInfo.appPkg, style = MaterialTheme.typography.bodySmall)
+            }
+
+            // 中间显示禁用状态文本
+            Text(
+                text = if (isDisabled) "Disabled" else "Enabled",
+                color = if (isDisabled) Color.Red else Color.Green,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(end = 16.dp)
+            )
+
+            // 右边是一个按钮
+            IconButton(
+                onClick = { isDisabled = !isDisabled; onToggle() }
+            ) {
+                Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
+                val icon: ImageVector = if (appInfo.isExist && isDisabled) {
+                    Icons.Default.Check
+                } else if (appInfo.isExist){
+                    Icons.Default.Close
+                } else {
+                    Icons.Default.Warning
+                }
+                // icon = if (isDisabled) Icons.Default.Check else Icons.Default.Close
+                Icon(imageVector = icon, contentDescription = if (isDisabled) "Enable" else "Disable")
+            }
+        }
+    }
+
+
+    fun getAppNameByPackageName(context: Context, packageName: String): String {
+        val packageManager: PackageManager = context.packageManager
+        val applicationInfo: ApplicationInfo? = try {
+            packageManager.getApplicationInfo(packageName, 0)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
+
+        return applicationInfo?.let {
+            packageManager.getApplicationLabel(it).toString()
+        } ?: "Unknown App"
+    }
+
+    @Composable
+    fun AppList(appList: List<AppInfo>, onToggle: () -> Unit) {
+        LazyColumn {
+            items(appList) { appInfo ->
+                AppListItem(
+                    appInfo = appInfo,
+                    onToggle = onToggle
+                )
+            }
+        }
+    }
+
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun AppListScreen(context: Context, onToggle: () -> Unit) {
+        val appList = remember { generateAppList(context) }
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text(text = "OriginPlan") },
+//                 backgroundColor = MaterialTheme.colorScheme.primary
+                )
+            }
+        ) {
+            Column {
+                // TopAppBar
+                TopAppBar(
+                    title = { Text(text = "OriginPlan") },
+                    // backgroundColor = MaterialTheme.colorScheme.primary
+                )
+
+                // AppList
+                AppList(appList = appList, onToggle)
+            }
+        }
+
+    }
+
+    @Composable
+    fun AppListContent(onToggle: () -> Unit) {
+        AppListScreen(LocalContext.current, onToggle)
+    }
+
+    fun generateAppList(context: Context): List<AppInfo> {
+        // 这里添加你的应用信息
+        // 返回一个长度为10的列表，其中包含10个AppInfo对象
+        for (appinfo in pkglist) {
+            a = isAppDisabled(context, appinfo.appPkg)
+            if (a != null) {
+                appinfo.isDisabled = a as Boolean
+            } else {
+                appinfo.isDisabled = false
+                appinfo.isExist=false
+            }
+            appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
+        }
+        val testlist: List<AppInfo> = List(2) { index ->
+            AppInfo(
+                appName = "App $index",
+                appPkg = "com.example.app$index",
+                isDisabled = index % 2 == 0
+            )
+        }
+        Log.d("列表项", pkglist.toString() + "\n" + testlist.toString())
+        return pkglist
+    }
+
+
+    fun isAppDisabled(context: Context, appPackageName: String): Boolean? {
+        val packageManager: PackageManager = context.packageManager
+
+        try {
+            val applicationEnabledSetting: Int =
+                packageManager.getApplicationEnabledSetting(appPackageName)
+
+            // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
+            if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                return true
+            } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
+                return false
+            }
+        } catch (e: Exception) {
+            // 如果找不到应用信息，也可以视为应用被停用
+            return null
+        }
+        return true
+    }
     fun test() {
         Toast.makeText(context, "test", Toast.LENGTH_SHORT).show()
         //TODO 在这里修改isDisabled
@@ -242,7 +259,7 @@ fun GreetingPreview() {
         // A surface container using the 'background' color from the theme
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             //SetTitle("原计划")
-            AppListContent { }
+            //AppListContent { }
         }
     }
 }

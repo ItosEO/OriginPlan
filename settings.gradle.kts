@@ -3,6 +3,9 @@ pluginManagement {
         google()
         mavenCentral()
         gradlePluginPortal()
+        maven { url = uri("https://jitpack.io") }
+        maven { url =uri("https://dl.bintray.com/rikkaw/Shizuku") }
+
     }
 }
 dependencyResolutionManagement {
