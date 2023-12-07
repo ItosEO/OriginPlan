@@ -60,7 +60,6 @@ val pkglist: List<AppInfo> = listOf(
 )
 
 
-
 class MainActivity : ComponentActivity() {
     private val context: Context = this
 
@@ -77,22 +76,34 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-        val SHIZUKU_PERMISSION_REQUEST_CODE=13
-        if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_DENIED) {
-            Shizuku.addRequestPermissionResultListener { requestCode, grantResult ->
-                    requestCode == SHIZUKU_PERMISSION_REQUEST_CODE && grantResult == PackageManager.PERMISSION_GRANTED
+    }
+
+    @Preview(showBackground = true)
+    @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+    @Composable
+    fun GreetingPreview() {
+        Study_kotlinTheme {
+            // A surface container using the 'background' color from the theme
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                //SetTitle("原计划")
+                AppListContent { test() }
             }
-            Shizuku.requestPermission(SHIZUKU_PERMISSION_REQUEST_CODE)
-        } else {
-            //viewModel.isGranted.value = true
         }
-        //Shizuku.addRequestPermissionResultListener(REQUEST_PERMISSION_RESULT_LISTENER);
+    }
+
+    fun test() {
+        Toast.makeText(context, "test", Toast.LENGTH_SHORT).show()
+        //TODO 在这里修改isDisabled
+        //TODO 加入Shizuku支持
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        //Shizuku.removeRequestPermissionResultListener(REQUEST_PERMISSION_RESULT_LISTENER);
     }
+
     @Composable
     fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
         //让 compose监听这个的变化
@@ -125,13 +136,16 @@ class MainActivity : ComponentActivity() {
                 Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
                 val icon: ImageVector = if (appInfo.isExist && isDisabled) {
                     Icons.Default.Check
-                } else if (appInfo.isExist){
+                } else if (appInfo.isExist) {
                     Icons.Default.Close
                 } else {
                     Icons.Default.Warning
                 }
                 // icon = if (isDisabled) Icons.Default.Check else Icons.Default.Close
-                Icon(imageVector = icon, contentDescription = if (isDisabled) "Enable" else "Disable")
+                Icon(
+                    imageVector = icon,
+                    contentDescription = if (isDisabled) "Enable" else "Disable"
+                )
             }
         }
     }
@@ -204,7 +218,7 @@ class MainActivity : ComponentActivity() {
                 appinfo.isDisabled = a as Boolean
             } else {
                 appinfo.isDisabled = false
-                appinfo.isExist=false
+                appinfo.isExist = false
             }
             appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
         }
@@ -239,27 +253,9 @@ class MainActivity : ComponentActivity() {
         }
         return true
     }
-    fun test() {
-        Toast.makeText(context, "test", Toast.LENGTH_SHORT).show()
-        //TODO 在这里修改isDisabled
-        //TODO 加入Shizuku支持
-    }
 
 
 }
 
 
 
-// 添加中文注释
-@Preview(showBackground = true)
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun GreetingPreview() {
-    Study_kotlinTheme {
-        // A surface container using the 'background' color from the theme
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            //SetTitle("原计划")
-            //AppListContent { }
-        }
-    }
-}
