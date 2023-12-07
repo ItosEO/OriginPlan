@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
@@ -44,7 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.itos.originplan.ui.theme.Study_kotlinTheme
 import rikka.shizuku.Shizuku
-import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
+import rikka.shizuku.Shizuku.OnBinderReceivedListener
 
 data class AppInfo(
     var appName: String,
@@ -62,7 +63,27 @@ val pkglist: List<AppInfo> = listOf(
 
 class MainActivity : ComponentActivity() {
     private val context: Context = this
+    val REQUEST_CODE = 123;
 
+    private val requestPermissionResultListener =
+        Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
+            this.onRequestPermissionsResult(
+                requestCode,
+                grantResult
+            )
+        }
+    private val BINDER_RECEVIED_LISTENER =
+        object : OnBinderReceivedListener {
+            override fun onBinderReceived() {
+                Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+            }
+        }
+    private val BINDER_DEAD_LISTENER: Shizuku.OnBinderDeadListener =
+        object : Shizuku.OnBinderDeadListener {
+            override fun onBinderDead() {
+                Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+            }
+        }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -72,12 +93,40 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppListContent { test() }
+                    AppListContent { test(false) }
                 }
             }
         }
+//        ShizukuHelper.requestPermission {
+//            Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+//        }
+        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
+        try {
+            if (checkPermission(REQUEST_CODE)) {
+                //onGranted()
+            } else {
+                Shizuku.requestPermission(REQUEST_CODE)
+            }        }catch (_:Exception){
+        }
+        Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
+        Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
+        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
     }
-
+    private fun checkPermission(code: Int): Boolean {
+        if (Shizuku.isPreV11()) {
+            // Pre-v11 is unsupported
+            return false
+        }
+        if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+            // Granted
+            return true
+        } else if (Shizuku.shouldShowRequestPermissionRationale()) {
+            // Users choose "Deny and don't ask again"
+            return false
+        } else {
+            return false
+        }
+    }
     @Preview(showBackground = true)
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
     @Composable
@@ -89,20 +138,26 @@ class MainActivity : ComponentActivity() {
                 color = MaterialTheme.colorScheme.background
             ) {
                 //SetTitle("原计划")
-                AppListContent { test() }
+                AppListContent { test(false) }
             }
         }
     }
 
-    fun test() {
-        Toast.makeText(context, "test", Toast.LENGTH_SHORT).show()
+    fun test(isDisabled: Boolean) {
+        Toast.makeText(context, isDisabled.toString(), Toast.LENGTH_SHORT).show()
         //TODO 在这里修改isDisabled
-        //TODO 加入Shizuku支持
+        //TODO 完善Shizuku
     }
-
+    private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
+        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+    }
     override fun onDestroy() {
         super.onDestroy()
+        Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
+        Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
+        Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
+
 
     @Composable
     fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
@@ -131,9 +186,9 @@ class MainActivity : ComponentActivity() {
 
             // 右边是一个按钮
             IconButton(
-                onClick = { isDisabled = !isDisabled; onToggle() }
+                onClick = { isDisabled = !isDisabled; test(isDisabled) }
             ) {
-                Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
+                // Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
                 val icon: ImageVector = if (appInfo.isExist && isDisabled) {
                     Icons.Default.Check
                 } else if (appInfo.isExist) {

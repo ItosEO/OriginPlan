@@ -57,11 +57,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
 
-    //implementation("dev.rikka.shizuku.api:13.1.5")
-    implementation(files("libs/api-13.1.5.aar"))
-    //implementation("dev.rikka.shizuku.provider:13.1.5")
-    implementation(files("libs/provider-13.1.5.aar"))
-
+    implementation("dev.rikka.shizuku:api:12.1.0")
+    implementation("dev.rikka.shizuku:provider:12.1.0")
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
