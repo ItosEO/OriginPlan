@@ -177,13 +177,17 @@ class MainActivity : ComponentActivity() {
 
     fun test(isDisabled: MutableState<Boolean>, packagename: String) {
         Toast.makeText(context, packagename+": "+isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
-        userService?.setApplicationEnabled(packagename, isDisabled.value)
-        isDisabled.value = isAppDisabled(this, packagename)!!
+        //userService?.setApplicationEnabled(packagename, isDisabled.value)
+        HShizuku.setAppDisabled(packagename, !isDisabled.value)
+        isDisabled.value = isAppDisabled( packagename)!!
         Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
         //TODO 在这里修改isDisabled
         //TODO 完善Shizuku
     }
-
+    companion object {
+        @SuppressLint("StaticFieldLeak")
+        lateinit var app: MainActivity private set
+    }
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
         Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
@@ -306,7 +310,7 @@ class MainActivity : ComponentActivity() {
         // 这里添加你的应用信息
         // 返回一个长度为10的列表，其中包含10个AppInfo对象
         for (appinfo in pkglist) {
-            a = isAppDisabled(context, appinfo.appPkg)
+            a = isAppDisabled(appinfo.appPkg)
             if (a != null) {
                 appinfo.isDisabled = a as Boolean
             } else {
@@ -327,7 +331,7 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    fun isAppDisabled(context: Context, appPackageName: String): Boolean? {
+    fun isAppDisabled(appPackageName: String): Boolean? {
         val packageManager: PackageManager = context.packageManager
 
         try {
@@ -337,7 +341,7 @@ class MainActivity : ComponentActivity() {
             // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
             if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
                 return true
-            } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT) {
+            } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT || applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
                 return false
             }
         } catch (e: Exception) {
