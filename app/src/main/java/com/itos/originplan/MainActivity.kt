@@ -95,7 +95,7 @@ class MainActivity : ComponentActivity() {
             override fun onBinderReceived() {
                 Toast.makeText(
                     context,
-                    ShizukuHelper.checkPermission().toString(),
+                    checkPermission().toString(),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -105,7 +105,7 @@ class MainActivity : ComponentActivity() {
             override fun onBinderDead() {
                 Toast.makeText(
                     context,
-                    ShizukuHelper.checkPermission().toString(),
+                    checkPermission().toString(),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
             }
         }
 //        ShizukuHelper.requestPermission {
-//            Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT).show()
 //        }
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         try {
@@ -139,7 +139,7 @@ class MainActivity : ComponentActivity() {
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.bindUserService(userServiceArgs, userServiceConnection)
-        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT)
+        Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
     }
 
@@ -178,7 +178,7 @@ class MainActivity : ComponentActivity() {
     fun test(isDisabled: MutableState<Boolean>, packagename: String) {
         Toast.makeText(context, packagename+": "+isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
         //userService?.setApplicationEnabled(packagename, isDisabled.value)
-        HShizuku.setAppDisabled(packagename, !isDisabled.value)
+        OShizuku.setAppDisabled(packagename, !isDisabled.value)
         isDisabled.value = isAppDisabled( packagename)!!
         Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
         //TODO 在这里修改isDisabled
@@ -189,7 +189,7 @@ class MainActivity : ComponentActivity() {
         lateinit var app: MainActivity private set
     }
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
-        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT)
+        Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
     }
 
@@ -201,6 +201,13 @@ class MainActivity : ComponentActivity() {
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
+    fun checkPermission(): Boolean {
+        return try {
+            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+        } catch (err: Throwable) {
+            false
+        }
+    }
 
     @Composable
     fun AppListItem(appInfo: AppInfo) {

@@ -14,7 +14,7 @@ import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 
-object HShizuku {
+object OShizuku {
     val myUserId = android.os.Process.myUserHandle().hashCode()
     private val isRoot get() = Shizuku.getUid() == 0
     private val userId get() = if (isRoot) myUserId else 0

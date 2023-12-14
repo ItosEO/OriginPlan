@@ -2,7 +2,7 @@ package com.itos.originplan
 
 import android.os.Build
 
-object HTarget {
+object OTarget {
     private fun target(api: Int): Boolean = Build.VERSION.SDK_INT >= api
 
     val N = target(Build.VERSION_CODES.N)
