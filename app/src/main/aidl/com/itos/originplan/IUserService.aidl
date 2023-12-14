@@ -10,4 +10,5 @@ interface IUserService  {
      */
     void destroy()=16777114;
     void exit()=1;
+    boolean setApplicationEnabled(String Package, boolean isDisabled)=2;
 }

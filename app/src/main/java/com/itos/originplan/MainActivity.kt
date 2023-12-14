@@ -1,12 +1,14 @@
 package com.itos.originplan
 
 import android.annotation.SuppressLint
+import android.content.ComponentName
 import android.content.Context
+import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.content.res.Configuration
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -32,10 +34,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.itos.originplan.ui.theme.Study_kotlinTheme
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
+import rikka.shizuku.Shizuku.UserServiceArgs
 
 data class AppInfo(
     var appName: String,
@@ -63,8 +65,24 @@ val pkglist: List<AppInfo> = listOf(
 
 class MainActivity : ComponentActivity() {
     private val context: Context = this
-    val REQUEST_CODE = 123;
+    var userService: IUserService? = null
 
+    val REQUEST_CODE = 123;
+    val userServiceArgs = UserServiceArgs(
+        ComponentName(
+            BuildConfig.APPLICATION_ID,
+            UserService::class.java.name
+        )
+    ).processNameSuffix("service")
+    val userServiceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            if (service.pingBinder()) {
+                userService = IUserService.Stub.asInterface(service)
+            }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {}
+    }
     private val requestPermissionResultListener =
         Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
             this.onRequestPermissionsResult(
@@ -75,15 +93,24 @@ class MainActivity : ComponentActivity() {
     private val BINDER_RECEVIED_LISTENER =
         object : OnBinderReceivedListener {
             override fun onBinderReceived() {
-                Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    ShizukuHelper.checkPermission().toString(),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     private val BINDER_DEAD_LISTENER: Shizuku.OnBinderDeadListener =
         object : Shizuku.OnBinderDeadListener {
             override fun onBinderDead() {
-                Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    ShizukuHelper.checkPermission().toString(),
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -93,7 +120,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    AppListContent { test(false) }
+                    AppListContent()
                 }
             }
         }
@@ -106,12 +133,16 @@ class MainActivity : ComponentActivity() {
                 //onGranted()
             } else {
                 Shizuku.requestPermission(REQUEST_CODE)
-            }        }catch (_:Exception){
+            }
+        } catch (_: Exception) {
         }
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
-        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
+        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT)
+            .show()
     }
+
     private fun checkPermission(code: Int): Boolean {
         if (Shizuku.isPreV11()) {
             // Pre-v11 is unsupported
@@ -127,6 +158,7 @@ class MainActivity : ComponentActivity() {
             return false
         }
     }
+
     @Preview(showBackground = true)
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
     @Composable
@@ -138,21 +170,28 @@ class MainActivity : ComponentActivity() {
                 color = MaterialTheme.colorScheme.background
             ) {
                 //SetTitle("原计划")
-                AppListContent { test(false) }
+                AppListContent()
             }
         }
     }
 
-    fun test(isDisabled: Boolean) {
-        Toast.makeText(context, isDisabled.toString(), Toast.LENGTH_SHORT).show()
+    fun test(isDisabled: MutableState<Boolean>, packagename: String) {
+        Toast.makeText(context, packagename+": "+isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
+        userService?.setApplicationEnabled(packagename, isDisabled.value)
+        isDisabled.value = isAppDisabled(this, packagename)!!
+        Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
         //TODO 在这里修改isDisabled
         //TODO 完善Shizuku
     }
+
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
-        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT).show()
+        Toast.makeText(context, ShizukuHelper.checkPermission().toString(), Toast.LENGTH_SHORT)
+            .show()
     }
+
     override fun onDestroy() {
         super.onDestroy()
+        Shizuku.unbindUserService(userServiceArgs, userServiceConnection, true)
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
@@ -160,9 +199,9 @@ class MainActivity : ComponentActivity() {
 
 
     @Composable
-    fun AppListItem(appInfo: AppInfo, onToggle: () -> Unit) {
+    fun AppListItem(appInfo: AppInfo) {
         //让 compose监听这个的变化
-        var isDisabled by remember { mutableStateOf(appInfo.isDisabled) }
+        var isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -178,18 +217,18 @@ class MainActivity : ComponentActivity() {
 
             // 中间显示禁用状态文本
             Text(
-                text = if (isDisabled) "Disabled" else "Enabled",
-                color = if (isDisabled) Color.Red else Color.Green,
+                text = if (isDisabled.value) "Disabled" else "Enabled",
+                color = if (isDisabled.value) Color.Red else Color.Green,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 16.dp)
             )
 
             // 右边是一个按钮
             IconButton(
-                onClick = { isDisabled = !isDisabled; test(isDisabled) }
+                onClick = { test(isDisabled, appInfo.appPkg) }
             ) {
                 // Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
-                val icon: ImageVector = if (appInfo.isExist && isDisabled) {
+                val icon: ImageVector = if (appInfo.isExist && isDisabled.value) {
                     Icons.Default.Check
                 } else if (appInfo.isExist) {
                     Icons.Default.Close
@@ -199,7 +238,7 @@ class MainActivity : ComponentActivity() {
                 // icon = if (isDisabled) Icons.Default.Check else Icons.Default.Close
                 Icon(
                     imageVector = icon,
-                    contentDescription = if (isDisabled) "Enable" else "Disable"
+                    contentDescription = if (isDisabled.value) "Enable" else "Disable"
                 )
             }
         }
@@ -220,12 +259,11 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun AppList(appList: List<AppInfo>, onToggle: () -> Unit) {
+    fun AppList(appList: List<AppInfo>) {
         LazyColumn {
             items(appList) { appInfo ->
                 AppListItem(
-                    appInfo = appInfo,
-                    onToggle = onToggle
+                    appInfo = appInfo
                 )
             }
         }
@@ -234,7 +272,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun AppListScreen(context: Context, onToggle: () -> Unit) {
+    fun AppListScreen(context: Context) {
         val appList = remember { generateAppList(context) }
 
         Scaffold(
@@ -253,15 +291,15 @@ class MainActivity : ComponentActivity() {
                 )
 
                 // AppList
-                AppList(appList = appList, onToggle)
+                AppList(appList = appList)
             }
         }
 
     }
 
     @Composable
-    fun AppListContent(onToggle: () -> Unit) {
-        AppListScreen(LocalContext.current, onToggle)
+    fun AppListContent() {
+        AppListScreen(LocalContext.current)
     }
 
     fun generateAppList(context: Context): List<AppInfo> {

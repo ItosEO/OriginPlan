@@ -36,6 +36,7 @@ android {
     buildFeatures {
         compose = true
         aidl=true
+        buildConfig=true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
