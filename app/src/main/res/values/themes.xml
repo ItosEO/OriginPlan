@@ -2,4 +2,12 @@
 <resources>
 
     <style name="Theme.Study_kotlin" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.OriginPlan" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/color_origin</item>
+        <item name="colorAccent">@color/color_origin</item>
+    </style>
+    <style name="Theme.MDialog" parent="Theme.MaterialComponents.Light.NoActionBar">
+        <item name="colorPrimary">@color/color_origin</item>
+        <item name="colorAccent">@color/color_origin</item>
+    </style>
 </resources>

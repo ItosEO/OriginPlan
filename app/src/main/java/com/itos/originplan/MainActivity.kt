@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Bundle
 import android.os.IBinder
+import android.text.util.Linkify
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -24,7 +25,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,8 +40,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -44,6 +51,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.ui.theme.Study_kotlinTheme
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
@@ -175,19 +184,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun test(isDisabled: MutableState<Boolean>, packagename: String) {
-        Toast.makeText(context, packagename+": "+isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
+    fun SetAppDisabled(isDisabled: MutableState<Boolean>, packagename: String, isExist: Boolean) {
+        Toast.makeText(
+            context,
+            packagename + ": " + isDisabled.value.toString(),
+            Toast.LENGTH_SHORT
+        ).show()
         //userService?.setApplicationEnabled(packagename, isDisabled.value)
-        OShizuku.setAppDisabled(packagename, !isDisabled.value)
-        isDisabled.value = isAppDisabled( packagename)!!
-        Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
-        //TODO 在这里修改isDisabled
-        //TODO 完善Shizuku
+        if (isExist) {
+            OShizuku.setAppDisabled(packagename, !isDisabled.value)
+            isDisabled.value = isAppDisabled(packagename)!!
+            Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
+        }
     }
-    companion object {
-        @SuppressLint("StaticFieldLeak")
-        lateinit var app: MainActivity private set
-    }
+
+
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
         Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
@@ -221,22 +232,23 @@ class MainActivity : ComponentActivity() {
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 左边显示应用名称
-            Column {
+            Column(modifier = Modifier.weight(0.5f)) {
                 Text(text = appInfo.appName, style = MaterialTheme.typography.bodyMedium)
                 Text(text = appInfo.appPkg, style = MaterialTheme.typography.bodySmall)
             }
 
             // 中间显示禁用状态文本
             Text(
-                text = if (isDisabled.value) "Disabled" else "Enabled",
+                text = if (isDisabled.value) "停用" else "启用",
                 color = if (isDisabled.value) Color.Red else Color.Green,
                 style = MaterialTheme.typography.bodyMedium,
+
                 modifier = Modifier.padding(end = 16.dp)
             )
 
             // 右边是一个按钮
             IconButton(
-                onClick = { test(isDisabled, appInfo.appPkg) }
+                onClick = { SetAppDisabled(isDisabled, appInfo.appPkg, appInfo.isExist) }
             ) {
                 // Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
                 val icon: ImageVector = if (appInfo.isExist && isDisabled.value) {
@@ -252,6 +264,7 @@ class MainActivity : ComponentActivity() {
                     contentDescription = if (isDisabled.value) "Enable" else "Disable"
                 )
             }
+
         }
     }
 
@@ -280,25 +293,62 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun showLicenses() {
+        // val customContext = ContextThemeWrapper(context, R.style.Theme_MDialog)
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.action_licenses)
+            .setMessage(resources.openRawResource(R.raw.licenses).bufferedReader().readText())
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+            .findViewById<MaterialTextView>(android.R.id.message)?.apply {
+                setTextIsSelectable(true)
+                Linkify.addLinks(this, Linkify.EMAIL_ADDRESSES or Linkify.WEB_URLS)
+                // The first time the link is clicked the background does not change color and
+                // the view needs to get focus once.
+                requestFocus()
+            }
+    }
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun AppListScreen(context: Context) {
         val appList = remember { generateAppList(context) }
-
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(text = "OriginPlan") },
-//                 backgroundColor = MaterialTheme.colorScheme.primary
-                )
-            }
-        ) {
+        var expanded by remember { mutableStateOf(false) }
+        Scaffold {
             Column {
                 // TopAppBar
                 TopAppBar(
+
                     title = { Text(text = "OriginPlan") },
-                    // backgroundColor = MaterialTheme.colorScheme.primary
+                    actions = {
+                        IconButton(
+                            onClick = { expanded = true }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.List,
+                                contentDescription = "菜单"
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.padding(8.dp)
+                        ) {
+                            // 添加菜单项
+                            DropdownMenuItem(
+                                text = { Text(text = "GitHub") },
+                                onClick = { expanded = false ;showLicenses()},
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = "GitHub"
+                                    )
+                                })
+
+                            // 添加更多菜单项...
+                        }
+                    }
                 )
 
                 // AppList
