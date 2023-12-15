@@ -3,10 +3,12 @@ package com.itos.originplan
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.text.util.Linkify
@@ -342,7 +344,7 @@ class MainActivity : ComponentActivity() {
                             // 添加菜单项
                             DropdownMenuItem(
                                 text = { Text(text = "GitHub") },
-                                onClick = { expanded = false },
+                                onClick = { expanded = false; openLink("https://github.com/ItosEO/OriginPlan")},
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Info,
@@ -351,8 +353,8 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text(text = R.string.action_licenses.toString()) },
-                                onClick = { expanded = false ;showLicenses()},
+                                text = { Text(text = "许可证") },
+                                onClick = { expanded = false; showLicenses()},
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Info,
@@ -371,6 +373,9 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+    }
+    fun openLink(url: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
     @Composable
