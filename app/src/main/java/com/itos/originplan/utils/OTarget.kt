@@ -1,4 +1,4 @@
-package com.itos.originplan
+package com.itos.originplan.utils
 
 import android.os.Build
 

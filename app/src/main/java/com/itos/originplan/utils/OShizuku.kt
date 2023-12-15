@@ -1,4 +1,4 @@
-package com.itos.originplan
+package com.itos.originplan.utils
 
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -8,6 +8,7 @@ import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.view.InputEvent
 import android.view.KeyEvent
+import com.itos.originplan.BuildConfig
 import moe.shizuku.server.IShizukuService
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.shizuku.Shizuku
@@ -158,7 +159,7 @@ object OShizuku {
                 )
                 HiddenApiBypass.invoke(it::class.java, it, "build")
             }
-    
+
     fun execute(command: String, root: Boolean = isRoot): Pair<Int, String?> = runCatching {
         IShizukuService.Stub.asInterface(Shizuku.getBinder())
             .newProcess(arrayOf(if (root) "su" else "sh"), null, null).run {

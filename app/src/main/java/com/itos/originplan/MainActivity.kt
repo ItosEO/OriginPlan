@@ -54,10 +54,14 @@ import androidx.compose.ui.unit.dp
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.ui.theme.Study_kotlinTheme
+import com.itos.originplan.utils.OShizuku
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.Shizuku.UserServiceArgs
 
+// TODO 改全局主题色
+// TODO 调整方法顺序
+// TODO 字符串移至Strings.xml
 data class AppInfo(
     var appName: String,
     val appPkg: String,
@@ -65,17 +69,16 @@ data class AppInfo(
     var isExist: Boolean = true
 )
 
-var a: Boolean? = false
-val pkglist: List<AppInfo> = listOf(
-    AppInfo("mt", "bin.mt.plus.canary"),
-    AppInfo("vivoopt", "com.itos.optzimiation"),
-)
 
 
 class MainActivity : ComponentActivity() {
     private val context: Context = this
     var userService: IUserService? = null
-
+    var a: Boolean? = false
+    val pkglist: List<AppInfo> = listOf(
+        AppInfo("mt", "bin.mt.plus.canary"),
+        AppInfo("vivoopt", "com.itos.optzimiation"),
+    )
     val REQUEST_CODE = 123;
     val userServiceArgs = UserServiceArgs(
         ComponentName(
@@ -294,6 +297,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun showLicenses() {
+        // TODO 改颜色
         // val customContext = ContextThemeWrapper(context, R.style.Theme_MDialog)
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.action_licenses)
@@ -338,13 +342,24 @@ class MainActivity : ComponentActivity() {
                             // 添加菜单项
                             DropdownMenuItem(
                                 text = { Text(text = "GitHub") },
+                                onClick = { expanded = false },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = "GitHub"
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(text = R.string.action_licenses.toString()) },
                                 onClick = { expanded = false ;showLicenses()},
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Info,
                                         contentDescription = "GitHub"
                                     )
-                                })
+                                }
+                            )
 
                             // 添加更多菜单项...
                         }
@@ -408,7 +423,9 @@ class MainActivity : ComponentActivity() {
         return true
     }
 
-
+    companion object {
+        lateinit var app: MainActivity private set
+    }
 }
 
 
