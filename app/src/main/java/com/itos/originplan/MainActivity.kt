@@ -13,7 +13,6 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.Message
 import android.text.util.Linkify
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -86,7 +85,8 @@ class MainActivity : ComponentActivity() {
         AppInfo("mt", "bin.mt.plus.canary"),
         AppInfo("origin read", "com.vivo.newsreader"),
         AppInfo("douyin", "com.ss.android.ugc.aweme"),
-
+        AppInfo("zhuti", "com.bbk.theme"),
+        AppInfo("kuan", "com.coolapk.market")
         )
     var ReturnValue: Int = 0
     val REQUEST_CODE = 123
@@ -423,6 +423,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.List,
+                                tint = Color.White,
                                 contentDescription = "菜单"
                             )
                         }
@@ -484,6 +485,7 @@ class MainActivity : ComponentActivity() {
                 appinfo.isDisabled = a
             } else {
                 appinfo.isExist = false
+                appinfo.appName = "未安装"
             }
         }
 //        val testlist: List<AppInfo> = List(2) { index ->
