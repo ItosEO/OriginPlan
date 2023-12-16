@@ -36,10 +36,12 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -327,6 +329,7 @@ class MainActivity : ComponentActivity() {
                 TopAppBar(
 
                     title = { Text(text = "OriginPlan") },
+                    colors = TopAppBarDefaults.smallTopAppBarColors(titleContentColor = Color.White, containerColor = Color(android.graphics.Color.parseColor("#212121"))),
                     actions = {
                         IconButton(
                             onClick = { expanded = true }
@@ -344,6 +347,7 @@ class MainActivity : ComponentActivity() {
                             // 添加菜单项
                             DropdownMenuItem(
                                 text = { Text(text = "GitHub") },
+                                colors= MenuDefaults.itemColors(textColor = Color.White,),
                                 onClick = { expanded = false; openLink("https://github.com/ItosEO/OriginPlan")},
                                 leadingIcon = {
                                     Icon(
