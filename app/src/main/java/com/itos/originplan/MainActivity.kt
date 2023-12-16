@@ -64,15 +64,14 @@ import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.Shizuku.UserServiceArgs
 
 // TODO 改全局主题色
-// TODO 调整方法顺序
-// TODO 字符串移至Strings.xml
+
+
 data class AppInfo(
     var appName: String,
     val appPkg: String,
     var isDisabled: Boolean = false,
     var isExist: Boolean = true
 )
-
 
 
 class MainActivity : ComponentActivity() {
@@ -83,7 +82,7 @@ class MainActivity : ComponentActivity() {
         AppInfo("mt", "bin.mt.plus.canary"),
         AppInfo("vivoopt", "com.itos.optzimiation"),
     )
-    val REQUEST_CODE = 123;
+    val REQUEST_CODE = 123
     val userServiceArgs = UserServiceArgs(
         ComponentName(
             BuildConfig.APPLICATION_ID,
@@ -140,9 +139,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-//        ShizukuHelper.requestPermission {
-//            Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT).show()
-//        }
+
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         try {
             if (checkPermission(REQUEST_CODE)) {
@@ -157,6 +154,19 @@ class MainActivity : ComponentActivity() {
         Shizuku.bindUserService(userServiceArgs, userServiceConnection)
         Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
+    }
+
+    private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
+        Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
+            .show()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Shizuku.unbindUserService(userServiceArgs, userServiceConnection, true)
+        Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
+        Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
+        Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
     private fun checkPermission(code: Int): Boolean {
@@ -175,6 +185,65 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun SetAppDisabled(isDisabled: MutableState<Boolean>, packagename: String, isExist: Boolean) {
+        Toast.makeText(
+            context,
+            packagename + ": " + isDisabled.value.toString(),
+            Toast.LENGTH_SHORT
+        ).show()
+        //userService?.setApplicationEnabled(packagename, isDisabled.value)
+        if (isExist) {
+            OShizuku.setAppDisabled(packagename, !isDisabled.value)
+            isDisabled.value = isAppDisabled(packagename)!!
+            Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun checkPermission(): Boolean {
+        return try {
+            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
+        } catch (err: Throwable) {
+            false
+        }
+    }
+
+    fun getAppNameByPackageName(context: Context, packageName: String): String {
+        val packageManager: PackageManager = context.packageManager
+        val applicationInfo: ApplicationInfo? = try {
+            packageManager.getApplicationInfo(packageName, 0)
+        } catch (e: PackageManager.NameNotFoundException) {
+            null
+        }
+
+        return applicationInfo?.let {
+            packageManager.getApplicationLabel(it).toString()
+        } ?: "Unknown App"
+    }
+
+    fun openLink(url: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
+
+    fun isAppDisabled(appPackageName: String): Boolean? {
+        val packageManager: PackageManager = context.packageManager
+
+        try {
+            val applicationEnabledSetting: Int =
+                packageManager.getApplicationEnabledSetting(appPackageName)
+
+            // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
+            if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
+                return true
+            } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT || applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                return false
+            }
+        } catch (e: Exception) {
+            // 如果找不到应用信息，也可以视为应用被停用
+            return null
+        }
+        return true
+    }
+
     @Preview(showBackground = true)
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
     @Composable
@@ -191,41 +260,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun SetAppDisabled(isDisabled: MutableState<Boolean>, packagename: String, isExist: Boolean) {
-        Toast.makeText(
-            context,
-            packagename + ": " + isDisabled.value.toString(),
-            Toast.LENGTH_SHORT
-        ).show()
-        //userService?.setApplicationEnabled(packagename, isDisabled.value)
-        if (isExist) {
-            OShizuku.setAppDisabled(packagename, !isDisabled.value)
-            isDisabled.value = isAppDisabled(packagename)!!
-            Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
-        }
-    }
-
-
-    private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
-        Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
-            .show()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Shizuku.unbindUserService(userServiceArgs, userServiceConnection, true)
-        Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
-        Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
-        Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
-    }
-
-    fun checkPermission(): Boolean {
-        return try {
-            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-        } catch (err: Throwable) {
-            false
-        }
-    }
 
     @Composable
     fun AppListItem(appInfo: AppInfo) {
@@ -276,19 +310,6 @@ class MainActivity : ComponentActivity() {
     }
 
 
-    fun getAppNameByPackageName(context: Context, packageName: String): String {
-        val packageManager: PackageManager = context.packageManager
-        val applicationInfo: ApplicationInfo? = try {
-            packageManager.getApplicationInfo(packageName, 0)
-        } catch (e: PackageManager.NameNotFoundException) {
-            null
-        }
-
-        return applicationInfo?.let {
-            packageManager.getApplicationLabel(it).toString()
-        } ?: "Unknown App"
-    }
-
     @Composable
     fun AppList(appList: List<AppInfo>) {
         LazyColumn {
@@ -329,7 +350,10 @@ class MainActivity : ComponentActivity() {
                 TopAppBar(
 
                     title = { Text(text = "OriginPlan") },
-                    colors = TopAppBarDefaults.smallTopAppBarColors(titleContentColor = Color.White, containerColor = Color(android.graphics.Color.parseColor("#212121"))),
+                    colors = TopAppBarDefaults.smallTopAppBarColors(
+                        titleContentColor = Color.White,
+                        containerColor = Color(android.graphics.Color.parseColor("#212121"))
+                    ),
                     actions = {
                         IconButton(
                             onClick = { expanded = true }
@@ -347,8 +371,11 @@ class MainActivity : ComponentActivity() {
                             // 添加菜单项
                             DropdownMenuItem(
                                 text = { Text(text = "GitHub") },
-                                colors= MenuDefaults.itemColors(textColor = Color.White,),
-                                onClick = { expanded = false; openLink("https://github.com/ItosEO/OriginPlan")},
+                                colors = MenuDefaults.itemColors(textColor = Color.White),
+                                onClick = {
+                                    expanded =
+                                        false; openLink("https://github.com/ItosEO/OriginPlan")
+                                },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Info,
@@ -358,7 +385,7 @@ class MainActivity : ComponentActivity() {
                             )
                             DropdownMenuItem(
                                 text = { Text(text = "许可证") },
-                                onClick = { expanded = false; showLicenses()},
+                                onClick = { expanded = false; showLicenses() },
                                 leadingIcon = {
                                     Icon(
                                         imageVector = Icons.Default.Info,
@@ -378,9 +405,7 @@ class MainActivity : ComponentActivity() {
         }
 
     }
-    fun openLink(url: String) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-    }
+
 
     @Composable
     fun AppListContent() {
@@ -411,26 +436,6 @@ class MainActivity : ComponentActivity() {
         return pkglist
     }
 
-
-    fun isAppDisabled(appPackageName: String): Boolean? {
-        val packageManager: PackageManager = context.packageManager
-
-        try {
-            val applicationEnabledSetting: Int =
-                packageManager.getApplicationEnabledSetting(appPackageName)
-
-            // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
-            if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
-                return true
-            } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT || applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
-                return false
-            }
-        } catch (e: Exception) {
-            // 如果找不到应用信息，也可以视为应用被停用
-            return null
-        }
-        return true
-    }
 
     companion object {
         lateinit var app: MainActivity private set
