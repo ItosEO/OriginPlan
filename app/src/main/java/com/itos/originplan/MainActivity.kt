@@ -11,6 +11,7 @@ import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
+import android.os.Message
 import android.text.util.Linkify
 import android.util.Log
 import android.widget.Toast
@@ -27,7 +28,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
@@ -36,7 +36,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,15 +52,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.ui.theme.Study_kotlinTheme
+import com.itos.originplan.utils.OLog
 import com.itos.originplan.utils.OShizuku
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.Shizuku.UserServiceArgs
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStream
 
 // TODO 改全局主题色
 
@@ -77,11 +81,14 @@ data class AppInfo(
 class MainActivity : ComponentActivity() {
     private val context: Context = this
     var userService: IUserService? = null
-    var a: Boolean? = false
+    var a: Boolean = false
     val pkglist: List<AppInfo> = listOf(
         AppInfo("mt", "bin.mt.plus.canary"),
-        AppInfo("vivoopt", "com.itos.optzimiation"),
-    )
+        AppInfo("origin read", "com.vivo.newsreader"),
+        AppInfo("douyin", "com.ss.android.ugc.aweme"),
+
+        )
+    var ReturnValue: Int = 0
     val REQUEST_CODE = 123
     val userServiceArgs = UserServiceArgs(
         ComponentName(
@@ -152,12 +159,12 @@ class MainActivity : ComponentActivity() {
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.bindUserService(userServiceArgs, userServiceConnection)
-        Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
+        Toast.makeText(context, "shizuku:" + checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
     }
 
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
-        Toast.makeText(context, checkPermission().toString(), Toast.LENGTH_SHORT)
+        Toast.makeText(context, "shizuku:" + checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
     }
 
@@ -167,6 +174,60 @@ class MainActivity : ComponentActivity() {
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
+    }
+
+    fun ShizukuExec(cmd: ByteArray): String? {
+        val op = arrayOfNulls<String>(1)
+        try {
+            OLog.i("运行shell", "开始运行$cmd")
+            val p = Shizuku.newProcess(arrayOf<String>("sh"), null, null)
+            val out: OutputStream = p.getOutputStream()
+            out.write(cmd)
+            out.flush()
+            out.close()
+            val h2 = Thread {
+                try {
+                    val outText = StringBuilder()
+                    val reader = BufferedReader(InputStreamReader(p.getInputStream()))
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        outText.append(line).append("\n")
+                    }
+                    reader.close()
+                    val output = outText.toString()
+                    OLog.i("Output_Normal", output)
+                    op[0] = output
+                } catch (ignored: java.lang.Exception) {
+                }
+            }
+            h2.start()
+            val h3 = Thread {
+                try {
+                    val outText = StringBuilder()
+                    val reader = BufferedReader(InputStreamReader(p.getErrorStream()))
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        outText.append(line).append("\n")
+                    }
+                    reader.close()
+                    val output = outText.toString()
+                    OLog.i("Output_Error", output)
+                } catch (ignored: java.lang.Exception) {
+                }
+            }
+            h3.start()
+            OLog.i("运行shell,shizuku", "开始等待")
+            p.waitFor()
+            ReturnValue = p.exitValue()
+            OLog.i("运行shell,shizuku", "跑完了")
+            p.destroyForcibly()
+            val m = Message()
+            m.what = 2
+            m.obj = "完成！"
+            return op[0]
+        } catch (ignored: java.lang.Exception) {
+        }
+        return null
     }
 
     private fun checkPermission(code: Int): Boolean {
@@ -191,7 +252,6 @@ class MainActivity : ComponentActivity() {
             packagename + ": " + isDisabled.value.toString(),
             Toast.LENGTH_SHORT
         ).show()
-        //userService?.setApplicationEnabled(packagename, isDisabled.value)
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
             isDisabled.value = isAppDisabled(packagename)!!
@@ -224,24 +284,25 @@ class MainActivity : ComponentActivity() {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
-    fun isAppDisabled(appPackageName: String): Boolean? {
+    private fun isAppDisabled(appPackageName: String): Boolean {
         val packageManager: PackageManager = context.packageManager
 
-        try {
-            val applicationEnabledSetting: Int =
-                packageManager.getApplicationEnabledSetting(appPackageName)
+        val packageInfo = packageManager.getPackageInfo(appPackageName, 0)
+        // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
+        return !packageInfo.applicationInfo.enabled
+    }
 
-            // 应用被停用或者处于默认状态（未设置启用状态），返回 true；其他状态返回 false
-            if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
-                return true
-            } else if (applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_DEFAULT || applicationEnabledSetting == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
-                return false
-            }
-        } catch (e: Exception) {
-            // 如果找不到应用信息，也可以视为应用被停用
-            return null
+    private fun isInstalled(packageName: String): Boolean {
+        val pm = context.packageManager;
+        try {
+            val packageInfo = pm.getPackageInfo(packageName, 0)
+            OLog.i("应用安装判断", "$packageName 已安装")
+            return packageInfo != null;
+        } catch (ep: Throwable) {
+            OLog.i("应用安装判断", "$packageName 未安装")
+            OLog.e("应用安装判断报错", ep)
         }
-        return true
+        return false;
     }
 
     @Preview(showBackground = true)
@@ -265,6 +326,7 @@ class MainActivity : ComponentActivity() {
     fun AppListItem(appInfo: AppInfo) {
         //让 compose监听这个的变化
         var isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -280,10 +342,11 @@ class MainActivity : ComponentActivity() {
 
             // 中间显示禁用状态文本
             Text(
-                text = if (isDisabled.value) "停用" else "启用",
-                color = if (isDisabled.value) Color.Red else Color.Green,
+                text = if (!appInfo.isExist) "Unknow" else if (isDisabled.value) "Disable" else "Enable",
+                color = if (!appInfo.isExist) Color(0xFFFF6E40) else if (isDisabled.value) Color(
+                    0xFFFF5252
+                ) else Color(0xFF69F0AE),
                 style = MaterialTheme.typography.bodyMedium,
-
                 modifier = Modifier.padding(end = 16.dp)
             )
 
@@ -291,7 +354,6 @@ class MainActivity : ComponentActivity() {
             IconButton(
                 onClick = { SetAppDisabled(isDisabled, appInfo.appPkg, appInfo.isExist) }
             ) {
-                // Toast.makeText(LocalContext.current, appInfo.appName, Toast.LENGTH_SHORT).show()
                 val icon: ImageVector = if (appInfo.isExist && isDisabled.value) {
                     Icons.Default.Check
                 } else if (appInfo.isExist) {
@@ -302,7 +364,8 @@ class MainActivity : ComponentActivity() {
                 // icon = if (isDisabled) Icons.Default.Check else Icons.Default.Close
                 Icon(
                     imageVector = icon,
-                    contentDescription = if (isDisabled.value) "Enable" else "Disable"
+
+                    contentDescription = if (!appInfo.isExist) "Unknow" else if (isDisabled.value) "Disable" else "Enable"
                 )
             }
 
@@ -371,14 +434,14 @@ class MainActivity : ComponentActivity() {
                             // 添加菜单项
                             DropdownMenuItem(
                                 text = { Text(text = "GitHub") },
-                                colors = MenuDefaults.itemColors(textColor = Color.White),
+//                                colors = MenuDefaults.itemColors(textColor = Color.White),
                                 onClick = {
                                     expanded =
                                         false; openLink("https://github.com/ItosEO/OriginPlan")
                                 },
                                 leadingIcon = {
                                     Icon(
-                                        imageVector = Icons.Default.Info,
+                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
                                         contentDescription = "GitHub"
                                     )
                                 }
@@ -388,7 +451,7 @@ class MainActivity : ComponentActivity() {
                                 onClick = { expanded = false; showLicenses() },
                                 leadingIcon = {
                                     Icon(
-                                        imageVector = Icons.Default.Info,
+                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
                                         contentDescription = "GitHub"
                                     )
                                 }
@@ -414,32 +477,26 @@ class MainActivity : ComponentActivity() {
 
     fun generateAppList(context: Context): List<AppInfo> {
         // 这里添加你的应用信息
-        // 返回一个长度为10的列表，其中包含10个AppInfo对象
         for (appinfo in pkglist) {
-            a = isAppDisabled(appinfo.appPkg)
-            if (a != null) {
-                appinfo.isDisabled = a as Boolean
+            if (isInstalled(appinfo.appPkg)) {
+                appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
+                a = isAppDisabled(appinfo.appPkg)
+                appinfo.isDisabled = a
             } else {
-                appinfo.isDisabled = false
                 appinfo.isExist = false
             }
-            appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
         }
-        val testlist: List<AppInfo> = List(2) { index ->
-            AppInfo(
-                appName = "App $index",
-                appPkg = "com.example.app$index",
-                isDisabled = index % 2 == 0
-            )
-        }
-        Log.d("列表项", pkglist.toString() + "\n" + testlist.toString())
+//        val testlist: List<AppInfo> = List(2) { index ->
+//            AppInfo(
+//                appName = "App $index",
+//                appPkg = "com.example.app$index",
+//                isDisabled = index % 2 == 0
+//            )
+//        }
+        OLog.i("列表项", pkglist.toString())
         return pkglist
     }
 
-
-    companion object {
-        lateinit var app: MainActivity private set
-    }
 }
 
 
