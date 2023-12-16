@@ -79,7 +79,7 @@ data class AppInfo(
 
 class MainActivity : ComponentActivity() {
     private val context: Context = this
-    var userService: IUserService? = null
+    //var userService: IUserService? = null
     var a: Boolean = false
     val pkglist: List<AppInfo> = listOf(
         AppInfo("mt", "bin.mt.plus.canary"),
@@ -90,27 +90,24 @@ class MainActivity : ComponentActivity() {
         )
     var ReturnValue: Int = 0
     val REQUEST_CODE = 123
-    val userServiceArgs = UserServiceArgs(
-        ComponentName(
-            BuildConfig.APPLICATION_ID,
-            UserService::class.java.name
-        )
-    ).processNameSuffix("service")
-    val userServiceConnection: ServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName, service: IBinder) {
-            if (service.pingBinder()) {
-                userService = IUserService.Stub.asInterface(service)
-            }
-        }
-
-        override fun onServiceDisconnected(name: ComponentName) {}
-    }
+//    val userServiceArgs = UserServiceArgs(
+//        ComponentName(
+//            BuildConfig.APPLICATION_ID,
+//            UserService::class.java.name
+//        )
+//    ).processNameSuffix("service")
+//    val userServiceConnection: ServiceConnection = object : ServiceConnection {
+//        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+//            if (service.pingBinder()) {
+//                userService = IUserService.Stub.asInterface(service)
+//            }
+//        }
+//
+//        override fun onServiceDisconnected(name: ComponentName) {}
+//    }
     private val requestPermissionResultListener =
         Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
-            this.onRequestPermissionsResult(
-                requestCode,
-                grantResult
-            )
+            this.onRequestPermissionsResult()
         }
     private val BINDER_RECEVIED_LISTENER =
         object : OnBinderReceivedListener {
@@ -158,19 +155,19 @@ class MainActivity : ComponentActivity() {
         }
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
-        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
+//        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
         Toast.makeText(context, "shizuku:" + checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
     }
 
-    private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
+    private fun onRequestPermissionsResult() {
         Toast.makeText(context, "shizuku:" + checkPermission().toString(), Toast.LENGTH_SHORT)
             .show()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        Shizuku.unbindUserService(userServiceArgs, userServiceConnection, true)
+//        Shizuku.unbindUserService(userServiceArgs, userServiceConnection, true)
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
@@ -181,7 +178,7 @@ class MainActivity : ComponentActivity() {
         try {
             OLog.i("运行shell", "开始运行$cmd")
             val p = Shizuku.newProcess(arrayOf<String>("sh"), null, null)
-            val out: OutputStream = p.getOutputStream()
+            val out: OutputStream = p.outputStream
             out.write(cmd)
             out.flush()
             out.close()
@@ -204,7 +201,7 @@ class MainActivity : ComponentActivity() {
             val h3 = Thread {
                 try {
                     val outText = StringBuilder()
-                    val reader = BufferedReader(InputStreamReader(p.getErrorStream()))
+                    val reader = BufferedReader(InputStreamReader(p.errorStream))
                     var line: String?
                     while (reader.readLine().also { line = it } != null) {
                         outText.append(line).append("\n")
