@@ -1,6 +1,5 @@
 package com.itos.originplan.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -10,10 +9,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
         primary = Purple80,
@@ -38,7 +35,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun Study_kotlinTheme(
+fun OriginPlanTheme(
         // 是否处于暗色模式
         darkTheme: Boolean = isSystemInDarkTheme(),
 
@@ -65,9 +62,9 @@ fun Study_kotlinTheme(
     if (!view.isInEditMode) {
         // 添加一个副作用，设置状态栏颜色和外观
         SideEffect {
-            val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+//            val window = (view.context as Activity).window
+//            window.statusBarColor = colorScheme.primary.toArgb()
+//            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
         }
     }
 

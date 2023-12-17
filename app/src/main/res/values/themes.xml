@@ -15,9 +15,8 @@
         <item name="colorOnSurface">#212121</item>
         <item name="android:colorBackground">#FFFFFF</item>
         <item name="colorOnBackground">#212121</item>
+        <item name="android:statusBarColor">#212121</item>
+        <item name="android:navigationBarColor">#212121</item>
     </style>
-    <style name="Theme.MDialog" parent="Theme.MaterialComponents.Light.NoActionBar">
-        <item name="colorPrimary">@color/color_origin</item>
-        <item name="colorAccent">@color/color_origin</item>
-    </style>
+
 </resources>

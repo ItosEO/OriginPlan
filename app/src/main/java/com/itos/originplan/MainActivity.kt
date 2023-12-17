@@ -1,16 +1,13 @@
 package com.itos.originplan
 
 import android.annotation.SuppressLint
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.os.IBinder
 import android.os.Message
 import android.text.util.Linkify
 import android.widget.Toast
@@ -56,12 +53,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
-import com.itos.originplan.ui.theme.Study_kotlinTheme
+import com.itos.originplan.ui.theme.OriginPlanTheme
 import com.itos.originplan.utils.OLog
 import com.itos.originplan.utils.OShizuku
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
-import rikka.shizuku.Shizuku.UserServiceArgs
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStream
@@ -133,7 +129,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            Study_kotlinTheme {
+            OriginPlanTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -151,8 +147,8 @@ class MainActivity : ComponentActivity() {
             } else {
                 Shizuku.requestPermission(REQUEST_CODE)
             }
-        } catch (_: Exception) {
-        }
+        } catch (_: Exception) { }
+
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
@@ -306,7 +302,7 @@ class MainActivity : ComponentActivity() {
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
     @Composable
     fun GreetingPreview() {
-        Study_kotlinTheme {
+        OriginPlanTheme {
             // A surface container using the 'background' color from the theme
             Surface(
                 modifier = Modifier.fillMaxSize(),
@@ -342,7 +338,7 @@ class MainActivity : ComponentActivity() {
                 text = if (!appInfo.isExist) "Unknow" else if (isDisabled.value) "Disable" else "Enable",
                 color = if (!appInfo.isExist) Color(0xFFFF6E40) else if (isDisabled.value) Color(
                     0xFFFF5252
-                ) else Color(0xFF69F0AE),
+                ) else Color(0xFF59F0A6),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 16.dp)
             )
