@@ -8,11 +8,10 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.os.Message
 import android.text.util.Linkify
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +30,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -58,12 +58,6 @@ import com.itos.originplan.utils.OLog
 import com.itos.originplan.utils.OShizuku
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.OutputStream
-
-// TODO 改全局主题色
-
 
 data class AppInfo(
     var appName: String,
@@ -73,7 +67,7 @@ data class AppInfo(
 )
 
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     private val context: Context = this
     //var userService: IUserService? = null
     var a: Boolean = false
@@ -84,7 +78,6 @@ class MainActivity : ComponentActivity() {
         AppInfo("zhuti", "com.bbk.theme"),
         AppInfo("kuan", "com.coolapk.market")
         )
-    var ReturnValue: Int = 0
     val REQUEST_CODE = 123
 //    val userServiceArgs = UserServiceArgs(
 //        ComponentName(
@@ -112,7 +105,7 @@ class MainActivity : ComponentActivity() {
                     context,
                     checkPermission().toString(),
                     Toast.LENGTH_SHORT
-                ).show()
+                )
             }
         }
     private val BINDER_DEAD_LISTENER: Shizuku.OnBinderDeadListener =
@@ -122,7 +115,7 @@ class MainActivity : ComponentActivity() {
                     context,
                     checkPermission().toString(),
                     Toast.LENGTH_SHORT
-                ).show()
+                )
             }
         }
 
@@ -169,60 +162,18 @@ class MainActivity : ComponentActivity() {
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
-    fun ShizukuExec(cmd: ByteArray): String? {
-        val op = arrayOfNulls<String>(1)
-        try {
-            OLog.i("运行shell", "开始运行$cmd")
-            val p = Shizuku.newProcess(arrayOf<String>("sh"), null, null)
-            val out: OutputStream = p.outputStream
-            out.write(cmd)
-            out.flush()
-            out.close()
-            val h2 = Thread {
-                try {
-                    val outText = StringBuilder()
-                    val reader = BufferedReader(InputStreamReader(p.getInputStream()))
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        outText.append(line).append("\n")
-                    }
-                    reader.close()
-                    val output = outText.toString()
-                    OLog.i("Output_Normal", output)
-                    op[0] = output
-                } catch (ignored: java.lang.Exception) {
-                }
-            }
-            h2.start()
-            val h3 = Thread {
-                try {
-                    val outText = StringBuilder()
-                    val reader = BufferedReader(InputStreamReader(p.errorStream))
-                    var line: String?
-                    while (reader.readLine().also { line = it } != null) {
-                        outText.append(line).append("\n")
-                    }
-                    reader.close()
-                    val output = outText.toString()
-                    OLog.i("Output_Error", output)
-                } catch (ignored: java.lang.Exception) {
-                }
-            }
-            h3.start()
-            OLog.i("运行shell,shizuku", "开始等待")
-            p.waitFor()
-            ReturnValue = p.exitValue()
-            OLog.i("运行shell,shizuku", "跑完了")
-            p.destroyForcibly()
-            val m = Message()
-            m.what = 2
-            m.obj = "完成！"
-            return op[0]
-        } catch (ignored: java.lang.Exception) {
-        }
-        return null
-    }
 
+    fun show_author() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW)
+            intent.data = Uri.parse("coolmarket://u/3287595")
+            startActivity(intent)
+            finish()
+        } catch (e: java.lang.Exception) {
+            Toast.makeText(this, "打开酷安失败，请检查是否已安装", Toast.LENGTH_SHORT).show()
+            // 处理ActivityNotFoundException异常，例如提示用户下载应用或打开其他应用商店
+        }
+    }
     private fun checkPermission(code: Int): Boolean {
         if (Shizuku.isPreV11()) {
             // Pre-v11 is unsupported
@@ -244,11 +195,11 @@ class MainActivity : ComponentActivity() {
             context,
             packagename + ": " + isDisabled.value.toString(),
             Toast.LENGTH_SHORT
-        ).show()
+        )
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
             isDisabled.value = isAppDisabled(packagename)!!
-            Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT)
         }
     }
 
@@ -329,16 +280,16 @@ class MainActivity : ComponentActivity() {
         ) {
             // 左边显示应用名称
             Column(modifier = Modifier.weight(0.5f)) {
-                Text(text = appInfo.appName, style = MaterialTheme.typography.bodyMedium)
+                Text(text = appInfo.appName, style = MaterialTheme.typography.bodyMedium, color = if (!appInfo.isExist) Color(0xFFFF6E40) else LocalContentColor.current)
                 Text(text = appInfo.appPkg, style = MaterialTheme.typography.bodySmall)
             }
 
             // 中间显示禁用状态文本
             Text(
                 text = if (!appInfo.isExist) "Unknow" else if (isDisabled.value) "Disable" else "Enable",
-                color = if (!appInfo.isExist) Color(0xFFFF6E40) else if (isDisabled.value) Color(
-                    0xFFFF5252
-                ) else Color(0xFF59F0A6),
+                color = if (!appInfo.isExist) Color(0xFFFF6E40)
+                        else if (isDisabled.value) Color(0xFFFF5252)
+                        else Color(0xFF59F0A6),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 16.dp)
             )
@@ -426,6 +377,34 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(8.dp)
                         ) {
                             // 添加菜单项
+
+//                            DropdownMenuItem(
+//                                text = { Text(text = "QQ群") },
+//                                onClick = {
+//                                    expanded =
+//                                        false; openLink("https://github.com/ItosEO/OriginPlan")
+//                                },
+//                                leadingIcon = {
+//                                    Icon(
+//                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_qq),
+//                                        contentDescription = "QQ"
+//                                    )
+//                                }
+//                            )
+
+                            DropdownMenuItem(
+                                text = { Text(text = "作者酷安") },
+                                onClick = {
+                                    expanded =
+                                        false; show_author()
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
+                                        contentDescription = "Coolapk"
+                                    )
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text(text = "GitHub") },
 //                                colors = MenuDefaults.itemColors(textColor = Color.White),
