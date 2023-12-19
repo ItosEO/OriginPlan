@@ -6,11 +6,14 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.text.util.Linkify
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -58,6 +61,10 @@ import com.itos.originplan.utils.OLog
 import com.itos.originplan.utils.OShizuku
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
+
 
 data class AppInfo(
     var appName: String,
@@ -70,14 +77,15 @@ data class AppInfo(
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
     //var userService: IUserService? = null
-    var a: Boolean = false
-    val pkglist: List<AppInfo> = listOf(
-        AppInfo("mt", "bin.mt.plus.canary"),
-        AppInfo("origin read", "com.vivo.newsreader"),
-        AppInfo("douyin", "com.ss.android.ugc.aweme"),
-        AppInfo("zhuti", "com.bbk.theme"),
-        AppInfo("kuan", "com.coolapk.market")
-        )
+
+//    val pkglist: List<AppInfo> = listOf(
+//        AppInfo("mt", "bin.mt.plus.canary"),
+//        AppInfo("origin read", "com.vivo.newsreader"),
+//        AppInfo("douyin", "com.ss.android.ugc.aweme"),
+//        AppInfo("zhuti", "com.bbk.theme"),
+//        AppInfo("kuan", "com.coolapk.market")
+//        )
+    val pkglist = mutableListOf<AppInfo>()
     val REQUEST_CODE = 123
 //    val userServiceArgs = UserServiceArgs(
 //        ComponentName(
@@ -132,6 +140,23 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        try {
+            // 打开 pkglistfile 文件输入流
+            val inputStream = resources.openRawResource(R.raw.pkglist)
+            val reader = BufferedReader(InputStreamReader(inputStream))
+
+            // 逐行读取文件内容
+            var line: String?
+            while (reader.readLine().also { line = it } != null) {
+                val packageName = line!!.trim()
+                // 创建 AppInfo 对象，并添加到列表
+                val appInfo = AppInfo(appName = "", appPkg = packageName)
+                pkglist.add(appInfo)
+            }
+        } catch (e: Exception) {
+            // 处理异常，例如文件不存在等情况
+            e.printStackTrace()
+        }
 
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         try {
@@ -161,8 +186,50 @@ class MainActivity : AppCompatActivity() {
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
+    private fun showImageDialog(imageName: String) {
+        val builder: AlertDialog.Builder = MaterialAlertDialogBuilder(this)
 
+        // 创建一个 ImageView 并添加到对话框中
+        val imageView = ImageView(this)
+        try {
+            val `is` = assets.open(imageName)
+            val bitmap = BitmapFactory.decodeStream(`is`)
+            imageView.setImageBitmap(bitmap)
+            imageView.scaleType = ImageView.ScaleType.FIT_CENTER
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+        builder.setView(imageView) // 将 ImageView 加到对话框中
+        builder.setNegativeButton("OK") { dialog, which ->
+            // 点击 OK 按钮后的操作
+            dialog.dismiss()
+        }
+        builder.show() // 显示对话框
+    }
+    fun gift() {
+        val show_text = """
+                您可以通过微信或支付宝来捐赠
 
+                如果您有条件的话,希望可以捐赠一点
+                不求多少,支持一下我们,非常感谢
+
+                本工具永久免费!!!
+                """.trimIndent()
+        MaterialAlertDialogBuilder(this)
+            .setTitle("捐赠")
+            .setMessage(show_text)
+            .setPositiveButton("支付宝") { dialog, which ->
+                // 点击支付宝按钮后的操作
+                dialog.dismiss()
+                showImageDialog("zfb.jpg")
+            }
+            .setNegativeButton("微信") { dialog, which ->
+                // 点击微信按钮后的操作
+                dialog.dismiss()
+                showImageDialog("wx.png")
+            }
+            .show()
+    }
     fun show_author() {
         try {
             val intent = Intent(Intent.ACTION_VIEW)
@@ -170,7 +237,8 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         } catch (e: java.lang.Exception) {
-            Toast.makeText(this, "打开酷安失败，请检查是否已安装", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "打开酷安失败，已为您打开作者B站", Toast.LENGTH_SHORT).show()
+            openLink("https://space.bilibili.com/329223542")
             // 处理ActivityNotFoundException异常，例如提示用户下载应用或打开其他应用商店
         }
     }
@@ -179,18 +247,18 @@ class MainActivity : AppCompatActivity() {
             // Pre-v11 is unsupported
             return false
         }
-        if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+        return if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
             // Granted
-            return true
+            true
         } else if (Shizuku.shouldShowRequestPermissionRationale()) {
             // Users choose "Deny and don't ask again"
-            return false
+            false
         } else {
-            return false
+            false
         }
     }
 
-    fun SetAppDisabled(isDisabled: MutableState<Boolean>, packagename: String, isExist: Boolean) {
+    private fun SetAppDisabled(isDisabled: MutableState<Boolean>, packagename: String, isExist: Boolean) {
         Toast.makeText(
             context,
             packagename + ": " + isDisabled.value.toString(),
@@ -406,6 +474,19 @@ class MainActivity : AppCompatActivity() {
                                 }
                             )
                             DropdownMenuItem(
+                                text = { Text(text = "捐赠") },
+                                onClick = {
+                                    expanded =
+                                        false; gift()
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_giftcard),
+                                        contentDescription = "money"
+                                    )
+                                }
+                            )
+                            DropdownMenuItem(
                                 text = { Text(text = "GitHub") },
 //                                colors = MenuDefaults.itemColors(textColor = Color.White),
                                 onClick = {
@@ -449,6 +530,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun generateAppList(context: Context): List<AppInfo> {
+        var a: Boolean
         // 这里添加你的应用信息
         for (appinfo in pkglist) {
             if (isInstalled(appinfo.appPkg)) {

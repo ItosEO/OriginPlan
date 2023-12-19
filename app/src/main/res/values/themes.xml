@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Study_kotlin" parent="android:Theme.Material.Light.NoActionBar" />
-    <style name="Theme.OriginPlan" parent="Theme.MaterialComponents.Light.NoActionBar">
+<!--    <style name="Theme.Study_kotlin" parent="android:Theme.Material3.Light.NoActionBar" />-->
+    <style name="Theme.OriginPlan" parent="Theme.Material3.Light.NoActionBar">
         <item name="colorPrimary">#212121</item>
         <item name="colorPrimaryVariant">#000000</item>
         <item name="colorOnPrimary">#FFFFFF</item>
