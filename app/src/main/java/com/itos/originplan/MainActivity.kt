@@ -1,5 +1,4 @@
 package com.itos.originplan
-
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -15,12 +14,18 @@ import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -30,8 +35,11 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.CardColors
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -39,11 +47,13 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,13 +64,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.ui.theme.OriginPlanTheme
@@ -77,7 +90,13 @@ data class AppInfo(
     var isDisabled: Boolean = false,
     var isExist: Boolean = true
 )
-
+data class HomeCardItem(
+    val icon: ImageVector? = null,
+    val label: String,
+    val content: String? = null,
+    val onClick: (() -> Unit)? = null
+) {
+}
 
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
@@ -107,19 +126,6 @@ class MainActivity : AppCompatActivity() {
 //
 //        override fun onServiceDisconnected(name: ComponentName) {}
 //    }
-    //导航label数组
-    private val labels = arrayOf("freezer", "about",)
-
-    //导航默认图标集合
-    private val defImages =
-        arrayOf(R.drawable.ic_outline_lisence, R.drawable.ic_outline_code)
-
-    //导航选中图标集合
-    private var selectImages =
-        arrayOf(R.drawable.ic_outline_lisence, R.drawable.ic_outline_code)
-
-    //导航选中索引
-    private var selectIndex by mutableStateOf(0)
 
     private val requestPermissionResultListener =
         Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
@@ -412,7 +418,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showLicenses() {
-        // TODO 改颜色
         // val customContext = ContextThemeWrapper(context, R.style.Theme_MDialog)
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.action_licenses)
@@ -427,13 +432,255 @@ class MainActivity : AppCompatActivity() {
                 requestFocus()
             }
     }
+
     @Composable
-    fun test(){
-        Text(text = "223")
+    fun ItemsCardWidget(
+        colors: CardColors = CardDefaults.elevatedCardColors(),
+        onClick: (() -> Unit)? = null,
+        showItemIcon: Boolean = false,
+        icon: (@Composable () -> Unit)? = null,
+        title: (@Composable () -> Unit)? = null,
+        items: List<HomeCardItem>,
+        buttons: (@Composable () -> Unit)? = null
+    ) {
+        CardWidget(
+            colors = colors,
+            onClick = onClick,
+            icon = icon,
+            title = title,
+            content = {
+                @Composable
+                fun ItemWidget(item: HomeCardItem) {
+                    Row(
+                        modifier = Modifier
+                            .clickable(enabled = item.onClick != null, onClick = item.onClick ?: {})
+                            .padding(horizontal = 24.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp)
+                    ) {
+                        if (showItemIcon) {
+                            if (item.icon != null) {
+                                Icon(imageVector = item.icon, contentDescription = item.label)
+                            } else {
+                                Spacer(modifier = Modifier.size(32.dp))
+                            }
+                        }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                        ) {
+                            Text(text = item.label, style = MaterialTheme.typography.bodyLarge)
+                            if (item.content != null) {
+                                Text(text = item.content, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+                Column {
+                    items.forEach {
+                        ItemWidget(it)
+                    }
+                }
+            },
+            buttons = buttons
+        )
+    }
+    @Composable
+    fun CardWidget(
+        colors: CardColors = CardDefaults.elevatedCardColors(),
+        onClick: (() -> Unit)? = null,
+        icon: (@Composable () -> Unit)? = null,
+        title: (@Composable () -> Unit)? = null,
+        content: (@Composable () -> Unit)? = null,
+        buttons: (@Composable () -> Unit)? = null
+    ) {
+        ElevatedCard(
+            colors = colors
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = onClick != null, onClick = onClick ?: {})
+                    .padding(vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (icon != null) {
+                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.secondary) {
+                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            icon()
+                        }
+                    }
+                }
+                if (title != null) {
+                    ProvideTextStyle(value = MaterialTheme.typography.titleLarge) {
+                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                            title()
+                        }
+                    }
+                }
+                if (content != null) {
+                    Box {
+                        content()
+                    }
+                }
+                if (buttons != null) {
+                    Box {
+                        buttons()
+                    }
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun StatusWidget() {
+        val containerColor = MaterialTheme.colorScheme.primaryContainer
+
+        val onContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
+
+        val level = "Release"
+
+        CardWidget(
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = containerColor,
+                contentColor = onContainerColor
+            ),
+            icon = {
+                Image(
+                    modifier = Modifier
+                        .size(56.dp),
+                    painter = rememberDrawablePainter(
+                        drawable = ContextCompat.getDrawable(
+                            LocalContext.current,
+                            R.mipmap.ic_launcher
+                        )
+                    ),
+                    contentDescription = stringResource(id = R.string.app_name)
+                )
+            },
+            title = {
+                Text(
+                    modifier = Modifier,
+                    text = stringResource(id = R.string.app_name),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+            },
+            content = {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        modifier = Modifier.align(Alignment.Center),
+                        text = "$level [${BuildConfig.VERSION_NAME} (${ BuildConfig.VERSION_CODE})]",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            }
+        )
+    }
+
+    @Composable
+    fun DonateWidget() {
+        val context = LocalContext.current
+
+        val items = listOf(
+            HomeCardItem(
+                label = "支付宝",
+                onClick = {
+                    showImageDialog("zfb.jpg")
+                }
+            ),
+            HomeCardItem(
+                label = "微信",
+                onClick = {
+                    showImageDialog("wx.png")
+                }
+            ),
+
+        )
+        ItemsCardWidget(
+            title = {
+                Text(text = "捐赠")
+            },
+            items = items
+        )
+    }
+
+    @Composable
+    fun DiscussWidget() {
+        val items = listOf(
+            HomeCardItem(
+                label = "QQ频道",
+                onClick = {
+                    openLink("https://pd.qq.com/s/nx7jpup8")
+                }
+            ),
+
+        )
+        ItemsCardWidget(
+            title = {
+                Text(text = "讨论&反馈")
+            },
+            items = items
+        )
+    }
+    @Composable
+    fun OpenSourceWidget() {
+        val items = listOf(
+            HomeCardItem(
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
+
+                label = "Github",
+                onClick = {
+                    openLink("https://github.com/ItosEO/OriginPlan")
+                }
+            ),
+            HomeCardItem(
+                icon= ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
+
+                label = "许可证",
+                onClick = {
+                    showLicenses()
+                }
+            ),
+
+            )
+        ItemsCardWidget(
+            title = {
+                Text(text = "捐赠")
+            },
+            items = items,
+            showItemIcon= true
+        )
     }
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun Freezer(){
+    fun About(){
+        Column {
+            // TopAppBar
+            TopAppBar(title = { Text(text = "关于") })
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                item {
+                    StatusWidget()
+                }
+                item {
+                    DonateWidget()
+                }
+                item {
+                    DiscussWidget()
+                }
+                item {
+                    OpenSourceWidget()
+                }
+            }
+        }
+    }
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun Details(){
         val appList = remember { generateAppList(context) }
         var expanded by remember { mutableStateOf(false) }
         Column {
@@ -462,22 +709,9 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         // 添加菜单项
 
-//                            DropdownMenuItem(
-//                                text = { Text(text = "QQ群") },
-//                                onClick = {
-//                                    expanded =
-//                                        false; openLink("https://github.com/ItosEO/OriginPlan")
-//                                },
-//                                leadingIcon = {
-//                                    Icon(
-//                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_qq),
-//                                        contentDescription = "QQ"
-//                                    )
-//                                }
-//                            )
 
                         DropdownMenuItem(
-                            text = { Text(text = "作者酷安") },
+                            text = { Text(text = "开发者酷安") },
                             onClick = {
                                 expanded =
                                     false; show_author()
@@ -536,6 +770,7 @@ class MainActivity : AppCompatActivity() {
             AppList(appList = appList)
         }
     }
+
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -545,15 +780,39 @@ class MainActivity : AppCompatActivity() {
         Scaffold (
             //设置底部导航栏
             bottomBar = {
-                NavigationBar (){
+                NavigationBar {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Create, contentDescription = null) },
-                        label = { Text("Freezer") },
-                        selected = currentDestination?.route == "Freezer",
+                        label = {
+                            Text(
+                                text = "Opt",
+//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
+                            )
+                        },
+                        selected = currentDestination?.route == "1",
                         onClick = {
-                            navController.navigate("Freezer") {
+                            navController.navigate("1") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Create, contentDescription = null) },
+                        label = {
+                            Text(
+                                text = "Details",
+//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
+                            )
+                        },
+                        selected = currentDestination?.route == "2",
+                        onClick = {
+                            navController.navigate("2") {
                                 popUpTo(navController.graph.startDestinationId) {
                                     saveState = true
                                 }
@@ -564,10 +823,15 @@ class MainActivity : AppCompatActivity() {
                     )
                     NavigationBarItem(
                         icon = { Icon(Icons.Default.Info, contentDescription = null) },
-                        label = { Text("About") },
-                        selected = currentDestination?.route == "About",
+                        label = {
+                            Text(
+                                text = "About",
+//                                modifier = Modifier.alpha(if (currentDestination?.route == "About") 1f else 0f)
+                            )
+                        },
+                        selected = currentDestination?.route == "3",
                         onClick = {
-                            navController.navigate("About") {
+                            navController.navigate("3") {
                                 popUpTo(navController.graph.startDestinationId) {
                                     saveState = true
                                 }
@@ -578,14 +842,17 @@ class MainActivity : AppCompatActivity() {
                     )
                 }
             }
+
         ){
 
             NavHost(
                 navController = navController,
-                startDestination = "Freezer"
+                startDestination = "2"
             ) {
-                composable("Freezer") { Freezer() }
-                composable("About") { test() }
+                composable("2") { Details() }
+                composable("3") { About() }
+                composable("1") { About() }
+
                 // 添加其他页面的 composable 函数，类似上面的示例
             }
         }
