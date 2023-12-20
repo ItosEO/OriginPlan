@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.DropdownMenu
@@ -35,11 +37,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -54,6 +57,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.ui.theme.OriginPlanTheme
@@ -64,8 +71,6 @@ import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-
-
 data class AppInfo(
     var appName: String,
     val appPkg: String,
@@ -102,29 +107,39 @@ class MainActivity : AppCompatActivity() {
 //
 //        override fun onServiceDisconnected(name: ComponentName) {}
 //    }
+    //导航label数组
+    private val labels = arrayOf("freezer", "about",)
+
+    //导航默认图标集合
+    private val defImages =
+        arrayOf(R.drawable.ic_outline_lisence, R.drawable.ic_outline_code)
+
+    //导航选中图标集合
+    private var selectImages =
+        arrayOf(R.drawable.ic_outline_lisence, R.drawable.ic_outline_code)
+
+    //导航选中索引
+    private var selectIndex by mutableStateOf(0)
+
     private val requestPermissionResultListener =
         Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
             this.onRequestPermissionsResult()
         }
     private val BINDER_RECEVIED_LISTENER =
-        object : OnBinderReceivedListener {
-            override fun onBinderReceived() {
-                Toast.makeText(
-                    context,
-                    checkPermission().toString(),
-                    Toast.LENGTH_SHORT
-                )
-            }
+        OnBinderReceivedListener {
+            Toast.makeText(
+                context,
+                checkPermission().toString(),
+                Toast.LENGTH_SHORT
+            )
         }
     private val BINDER_DEAD_LISTENER: Shizuku.OnBinderDeadListener =
-        object : Shizuku.OnBinderDeadListener {
-            override fun onBinderDead() {
-                Toast.makeText(
-                    context,
-                    checkPermission().toString(),
-                    Toast.LENGTH_SHORT
-                )
-            }
+        Shizuku.OnBinderDeadListener {
+            Toast.makeText(
+                context,
+                checkPermission().toString(),
+                Toast.LENGTH_SHORT
+            )
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -412,39 +427,40 @@ class MainActivity : AppCompatActivity() {
                 requestFocus()
             }
     }
-
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @Composable
+    fun test(){
+        Text(text = "223")
+    }
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun AppListScreen(context: Context) {
+    fun Freezer(){
         val appList = remember { generateAppList(context) }
         var expanded by remember { mutableStateOf(false) }
-        Scaffold {
-            Column {
-                // TopAppBar
-                TopAppBar(
+        Column {
+            // TopAppBar
+            TopAppBar(
 
-                    title = { Text(text = "OriginPlan") },
-                    colors = TopAppBarDefaults.smallTopAppBarColors(
-                        titleContentColor = Color.White,
-                        containerColor = Color(android.graphics.Color.parseColor("#212121"))
-                    ),
-                    actions = {
-                        IconButton(
-                            onClick = { expanded = true }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.List,
-                                tint = Color.White,
-                                contentDescription = "菜单"
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.padding(8.dp)
-                        ) {
-                            // 添加菜单项
+                title = { Text(text = "原计划") },
+//                colors = TopAppBarDefaults.smallTopAppBarColors(
+//                     titleContentColor = Color.White,
+//                     containerColor = Color(android.graphics.Color.parseColor("#212121"))
+//                ),
+                actions = {
+                    IconButton(
+                        onClick = { expanded = true }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            // tint = Color.White,
+                            contentDescription = "菜单"
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.padding(8.dp)
+                    ) {
+                        // 添加菜单项
 
 //                            DropdownMenuItem(
 //                                text = { Text(text = "QQ群") },
@@ -460,64 +476,117 @@ class MainActivity : AppCompatActivity() {
 //                                }
 //                            )
 
-                            DropdownMenuItem(
-                                text = { Text(text = "作者酷安") },
-                                onClick = {
-                                    expanded =
-                                        false; show_author()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
-                                        contentDescription = "Coolapk"
-                                    )
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(text = "捐赠") },
-                                onClick = {
-                                    expanded =
-                                        false; gift()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_giftcard),
-                                        contentDescription = "money"
-                                    )
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(text = "GitHub") },
+                        DropdownMenuItem(
+                            text = { Text(text = "作者酷安") },
+                            onClick = {
+                                expanded =
+                                    false; show_author()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
+                                    contentDescription = "Coolapk"
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = "捐赠") },
+                            onClick = {
+                                expanded =
+                                    false; gift()
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_giftcard),
+                                    contentDescription = "money"
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = "GitHub") },
 //                                colors = MenuDefaults.itemColors(textColor = Color.White),
-                                onClick = {
-                                    expanded =
-                                        false; openLink("https://github.com/ItosEO/OriginPlan")
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
-                                        contentDescription = "GitHub"
-                                    )
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(text = "许可证") },
-                                onClick = { expanded = false; showLicenses() },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
-                                        contentDescription = "GitHub"
-                                    )
-                                }
-                            )
+                            onClick = {
+                                expanded =
+                                    false; openLink("https://github.com/ItosEO/OriginPlan")
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
+                                    contentDescription = "GitHub"
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(text = "许可证") },
+                            onClick = { expanded = false; showLicenses() },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
+                                    contentDescription = "GitHub"
+                                )
+                            }
+                        )
 
-                            // 添加更多菜单项...
-                        }
+                        // 添加更多菜单项...
                     }
-                )
+                }
+            )
 
-                // AppList
-                AppList(appList = appList)
+            // AppList
+            AppList(appList = appList)
+        }
+    }
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun AppListScreen(context: Context) {
+        val navController = rememberNavController()
+
+        Scaffold (
+            //设置底部导航栏
+            bottomBar = {
+                NavigationBar (){
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentDestination = navBackStackEntry?.destination
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Create, contentDescription = null) },
+                        label = { Text("Freezer") },
+                        selected = currentDestination?.route == "Freezer",
+                        onClick = {
+                            navController.navigate("Freezer") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                        label = { Text("About") },
+                        selected = currentDestination?.route == "About",
+                        onClick = {
+                            navController.navigate("About") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                }
+            }
+        ){
+
+            NavHost(
+                navController = navController,
+                startDestination = "Freezer"
+            ) {
+                composable("Freezer") { Freezer() }
+                composable("About") { test() }
+                // 添加其他页面的 composable 函数，类似上面的示例
             }
         }
 
