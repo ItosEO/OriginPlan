@@ -91,14 +91,15 @@ data class AppInfo(
     var isExist: Boolean = true
 )
 
-data class HomeCardItem(
+data class OriginCardItem(
     val icon: ImageVector? = null,
     val label: String,
     val content: String? = null,
     val onClick: (() -> Unit)? = null
 ) {
 }
-
+// TODO 优化shizuku授权，合并check权限和request权限
+// TODO 拆分About页面
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
     //var userService: IUserService? = null
@@ -360,6 +361,7 @@ class MainActivity : AppCompatActivity() {
             ).show()
         }
     }
+
     private fun isAppDisabled(appPackageName: String): Boolean {
         val packageManager: PackageManager = context.packageManager
 
@@ -487,7 +489,7 @@ class MainActivity : AppCompatActivity() {
         showItemIcon: Boolean = false,
         icon: (@Composable () -> Unit)? = null,
         title: (@Composable () -> Unit)? = null,
-        items: List<HomeCardItem>,
+        items: List<OriginCardItem>,
         buttons: (@Composable () -> Unit)? = null
     ) {
         CardWidget(
@@ -497,7 +499,7 @@ class MainActivity : AppCompatActivity() {
             title = title,
             content = {
                 @Composable
-                fun ItemWidget(item: HomeCardItem) {
+                fun ItemWidget(item: OriginCardItem) {
                     Row(
                         modifier = Modifier
                             .clickable(enabled = item.onClick != null, onClick = item.onClick ?: {})
@@ -632,14 +634,14 @@ class MainActivity : AppCompatActivity() {
         val context = LocalContext.current
 
         val items = listOf(
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_alipay),
                 label = "支付宝",
                 onClick = {
                     showImageDialog("zfb.jpg")
                 }
             ),
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_wechatpay),
                 label = "微信",
                 onClick = {
@@ -660,28 +662,28 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun DiscussWidget() {
         val items = listOf(
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
                 label = "BilibBili（开发者）",
                 onClick = {
                     openLink("https://space.bilibili.com/329223542")
                 }
             ),
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
                 label = "BilibBili（合作伙伴）",
                 onClick = {
                     openLink("https://space.bilibili.com/1289434708")
                 }
             ),
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
                 label = "酷安（开发者）",
                 onClick = {
                     show_author()
                 }
             ),
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_qq),
                 label = "QQ群",
                 onClick = {
@@ -702,7 +704,7 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun OpenSourceWidget() {
         val items = listOf(
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
 
                 label = "Github",
@@ -710,7 +712,7 @@ class MainActivity : AppCompatActivity() {
                     openLink("https://github.com/ItosEO/OriginPlan")
                 }
             ),
-            HomeCardItem(
+            OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
 
                 label = "许可证",
