@@ -1,4 +1,5 @@
 package com.itos.originplan
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -33,12 +34,9 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -84,12 +82,14 @@ import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
+
 data class AppInfo(
     var appName: String,
     val appPkg: String,
     var isDisabled: Boolean = false,
     var isExist: Boolean = true
 )
+
 data class HomeCardItem(
     val icon: ImageVector? = null,
     val label: String,
@@ -102,7 +102,7 @@ class MainActivity : AppCompatActivity() {
     private val context: Context = this
     //var userService: IUserService? = null
 
-//    val pkglist: List<AppInfo> = listOf(
+    //    val pkglist: List<AppInfo> = listOf(
 //        AppInfo("mt", "bin.mt.plus.canary"),
 //        AppInfo("origin read", "com.vivo.newsreader"),
 //        AppInfo("douyin", "com.ss.android.ugc.aweme"),
@@ -186,7 +186,8 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Shizuku.requestPermission(REQUEST_CODE)
             }
-        } catch (_: Exception) { }
+        } catch (_: Exception) {
+        }
 
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
@@ -207,6 +208,7 @@ class MainActivity : AppCompatActivity() {
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
+
     private fun showImageDialog(imageName: String) {
         val builder: AlertDialog.Builder = MaterialAlertDialogBuilder(this)
 
@@ -227,6 +229,7 @@ class MainActivity : AppCompatActivity() {
         }
         builder.show() // 显示对话框
     }
+
     fun gift() {
         val show_text = """
                 您可以通过微信或支付宝来捐赠
@@ -251,6 +254,7 @@ class MainActivity : AppCompatActivity() {
             }
             .show()
     }
+
     fun show_author() {
         try {
             val intent = Intent(Intent.ACTION_VIEW)
@@ -263,6 +267,7 @@ class MainActivity : AppCompatActivity() {
             // 处理ActivityNotFoundException异常，例如提示用户下载应用或打开其他应用商店
         }
     }
+
     private fun checkPermission(code: Int): Boolean {
         if (Shizuku.isPreV11()) {
             // Pre-v11 is unsupported
@@ -279,7 +284,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun SetAppDisabled(isDisabled: MutableState<Boolean>, packagename: String, isExist: Boolean) {
+    private fun SetAppDisabled(
+        isDisabled: MutableState<Boolean>,
+        packagename: String,
+        isExist: Boolean
+    ) {
         Toast.makeText(
             context,
             packagename + ": " + isDisabled.value.toString(),
@@ -369,7 +378,11 @@ class MainActivity : AppCompatActivity() {
         ) {
             // 左边显示应用名称
             Column(modifier = Modifier.weight(0.5f)) {
-                Text(text = appInfo.appName, style = MaterialTheme.typography.bodyMedium, color = if (!appInfo.isExist) Color(0xFFFF6E40) else LocalContentColor.current)
+                Text(
+                    text = appInfo.appName,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (!appInfo.isExist) Color(0xFFFF6E40) else LocalContentColor.current
+                )
                 Text(text = appInfo.appPkg, style = MaterialTheme.typography.bodySmall)
             }
 
@@ -377,8 +390,8 @@ class MainActivity : AppCompatActivity() {
             Text(
                 text = if (!appInfo.isExist) "Unknow" else if (isDisabled.value) "Disable" else "Enable",
                 color = if (!appInfo.isExist) Color(0xFFFF6E40)
-                        else if (isDisabled.value) Color(0xFFFF5252)
-                        else Color(0xFF59F0A6),
+                else if (isDisabled.value) Color(0xFFFF5252)
+                else Color(0xFF59F0A6),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 16.dp)
             )
@@ -470,7 +483,10 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             Text(text = item.label, style = MaterialTheme.typography.bodyLarge)
                             if (item.content != null) {
-                                Text(text = item.content, style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    text = item.content,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
                             }
                         }
                     }
@@ -484,6 +500,7 @@ class MainActivity : AppCompatActivity() {
             buttons = buttons
         )
     }
+
     @Composable
     fun CardWidget(
         colors: CardColors = CardDefaults.elevatedCardColors(),
@@ -568,7 +585,7 @@ class MainActivity : AppCompatActivity() {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         modifier = Modifier.align(Alignment.Center),
-                        text = "$level [${BuildConfig.VERSION_NAME} (${ BuildConfig.VERSION_CODE})]",
+                        text = "$level [${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})]",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -582,24 +599,27 @@ class MainActivity : AppCompatActivity() {
 
         val items = listOf(
             HomeCardItem(
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_alipay),
                 label = "支付宝",
                 onClick = {
                     showImageDialog("zfb.jpg")
                 }
             ),
             HomeCardItem(
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_wechatpay),
                 label = "微信",
                 onClick = {
                     showImageDialog("wx.png")
                 }
             ),
 
-        )
+            )
         ItemsCardWidget(
             title = {
                 Text(text = "捐赠")
             },
-            items = items
+            items = items,
+            showItemIcon = true
         )
     }
 
@@ -607,20 +627,36 @@ class MainActivity : AppCompatActivity() {
     fun DiscussWidget() {
         val items = listOf(
             HomeCardItem(
-                label = "QQ频道",
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
+                label = "BilibBili（开发者）",
                 onClick = {
-                    openLink("https://pd.qq.com/s/nx7jpup8")
+                    openLink("https://space.bilibili.com/329223542")
                 }
             ),
-
+            HomeCardItem(
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
+                label = "BilibBili（合作伙伴）",
+                onClick = {
+                    openLink("https://space.bilibili.com/1289434708")
+                }
+            ),
+            HomeCardItem(
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
+                label = "酷安（开发者）",
+                onClick = {
+                    show_author()
+                }
+            ),
         )
         ItemsCardWidget(
             title = {
-                Text(text = "讨论&反馈")
+                Text(text = "讨论&反馈&联系我们")
             },
-            items = items
+            items = items,
+            showItemIcon = true
         )
     }
+
     @Composable
     fun OpenSourceWidget() {
         val items = listOf(
@@ -633,7 +669,7 @@ class MainActivity : AppCompatActivity() {
                 }
             ),
             HomeCardItem(
-                icon= ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
 
                 label = "许可证",
                 onClick = {
@@ -644,15 +680,16 @@ class MainActivity : AppCompatActivity() {
             )
         ItemsCardWidget(
             title = {
-                Text(text = "捐赠")
+                Text(text = "开源")
             },
             items = items,
-            showItemIcon= true
+            showItemIcon = true
         )
     }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun About(){
+    fun About() {
         Column {
             // TopAppBar
             TopAppBar(title = { Text(text = "关于") })
@@ -678,9 +715,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun Details(){
+    fun Details() {
         val appList = remember { generateAppList(context) }
         var expanded by remember { mutableStateOf(false) }
         Column {
@@ -688,82 +726,79 @@ class MainActivity : AppCompatActivity() {
             TopAppBar(
 
                 title = { Text(text = "原计划") },
-//                colors = TopAppBarDefaults.smallTopAppBarColors(
-//                     titleContentColor = Color.White,
-//                     containerColor = Color(android.graphics.Color.parseColor("#212121"))
-//                ),
-                actions = {
-                    IconButton(
-                        onClick = { expanded = true }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.List,
-                            // tint = Color.White,
-                            contentDescription = "菜单"
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = Modifier.padding(8.dp)
-                    ) {
-                        // 添加菜单项
 
-
-                        DropdownMenuItem(
-                            text = { Text(text = "开发者酷安") },
-                            onClick = {
-                                expanded =
-                                    false; show_author()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
-                                    contentDescription = "Coolapk"
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = "捐赠") },
-                            onClick = {
-                                expanded =
-                                    false; gift()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_giftcard),
-                                    contentDescription = "money"
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = "GitHub") },
-//                                colors = MenuDefaults.itemColors(textColor = Color.White),
-                            onClick = {
-                                expanded =
-                                    false; openLink("https://github.com/ItosEO/OriginPlan")
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
-                                    contentDescription = "GitHub"
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(text = "许可证") },
-                            onClick = { expanded = false; showLicenses() },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
-                                    contentDescription = "GitHub"
-                                )
-                            }
-                        )
-
-                        // 添加更多菜单项...
-                    }
-                }
+//                actions = {
+//                    IconButton(
+//                        onClick = { expanded = true }
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Default.List,
+//                            // tint = Color.White,
+//                            contentDescription = "菜单"
+//                        )
+//                    }
+//                    DropdownMenu(
+//                        expanded = expanded,
+//                        onDismissRequest = { expanded = false },
+//                        modifier = Modifier.padding(8.dp)
+//                    ) {
+//                        // 添加菜单项
+//
+//
+//                        DropdownMenuItem(
+//                            text = { Text(text = "开发者酷安") },
+//                            onClick = {
+//                                expanded =
+//                                    false; show_author()
+//                            },
+//                            leadingIcon = {
+//                                Icon(
+//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
+//                                    contentDescription = "Coolapk"
+//                                )
+//                            }
+//                        )
+//                        DropdownMenuItem(
+//                            text = { Text(text = "捐赠") },
+//                            onClick = {
+//                                expanded =
+//                                    false; gift()
+//                            },
+//                            leadingIcon = {
+//                                Icon(
+//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_giftcard),
+//                                    contentDescription = "money"
+//                                )
+//                            }
+//                        )
+//                        DropdownMenuItem(
+//                            text = { Text(text = "GitHub") },
+////                                colors = MenuDefaults.itemColors(textColor = Color.White),
+//                            onClick = {
+//                                expanded =
+//                                    false; openLink("https://github.com/ItosEO/OriginPlan")
+//                            },
+//                            leadingIcon = {
+//                                Icon(
+//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
+//                                    contentDescription = "GitHub"
+//                                )
+//                            }
+//                        )
+//                        DropdownMenuItem(
+//                            text = { Text(text = "许可证") },
+//                            onClick = { expanded = false; showLicenses() },
+//                            leadingIcon = {
+//                                Icon(
+//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
+//                                    contentDescription = "GitHub"
+//                                )
+//                            }
+//                        )
+//
+//                        // 添加更多菜单项...
+//                    }
+//                }
             )
 
             // AppList
@@ -777,7 +812,7 @@ class MainActivity : AppCompatActivity() {
     fun AppListScreen(context: Context) {
         val navController = rememberNavController()
 
-        Scaffold (
+        Scaffold(
             //设置底部导航栏
             bottomBar = {
                 NavigationBar {
@@ -843,7 +878,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-        ){
+        ) {
 
             NavHost(
                 navController = navController,
