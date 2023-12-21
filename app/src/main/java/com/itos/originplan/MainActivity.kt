@@ -83,6 +83,7 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 
+
 data class AppInfo(
     var appName: String,
     val appPkg: String,
@@ -326,6 +327,39 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
+    /****************
+     *
+     * 发起添加群流程。群号：IQOO⭐️交流群(262040855) 的 key 为： SqLJvDGqjKNDvc_O5dx6A164eLSo4QBG
+     * 调用 joinQQGroup(SqLJvDGqjKNDvc_O5dx6A164eLSo4QBG) 即可发起手Q客户端申请加群 IQOO⭐️交流群(262040855)
+     *
+     * @param key 由官网生成的key
+     * @return 返回true表示呼起手Q成功，返回false表示呼起失败
+     */
+    private fun joinQQGroup(key: String): Boolean {
+        val intent = Intent()
+        intent.data =
+            Uri.parse("mqqopensdkapi://bizAgent/qm/qr?url=http%3A%2F%2Fqm.qq.com%2Fcgi-bin%2Fqm%2Fqr%3Ffrom%3Dapp%26p%3Dandroid%26jump_from%3Dwebapi%26k%3D$key")
+        // 此Flag可根据具体产品需要自定义，如设置，则在加群界面按返回，返回手Q主界面，不设置，按返回会返回到呼起产品界面
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return try {
+            startActivity(intent)
+            true
+        } catch (e: java.lang.Exception) {
+            // 未安装手Q或安装的版本不支持
+            false
+        }
+    }
+
+    fun join_qq() {
+        val is_join_succeed = joinQQGroup("SqLJvDGqjKNDvc_O5dx6A164eLSo4QBG")
+        if (!is_join_succeed) {
+            Toast.makeText(
+                this,
+                "未安装手Q或安装的版本不支持, 请手动加群262040855",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
     private fun isAppDisabled(appPackageName: String): Boolean {
         val packageManager: PackageManager = context.packageManager
 
@@ -647,7 +681,15 @@ class MainActivity : AppCompatActivity() {
                     show_author()
                 }
             ),
-        )
+            HomeCardItem(
+                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_qq),
+                label = "QQ群",
+                onClick = {
+                    join_qq()
+                }
+            ),
+
+            )
         ItemsCardWidget(
             title = {
                 Text(text = "讨论&反馈&联系我们")
