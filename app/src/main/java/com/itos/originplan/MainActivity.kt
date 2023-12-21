@@ -35,6 +35,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Create
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -882,7 +884,18 @@ class MainActivity : AppCompatActivity() {
                         }
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Create, contentDescription = null) },
+                        icon = {
+                            when (currentDestination?.route) {
+                                "2" -> {
+                                    // 选中时的图标
+                                    Icon(Icons.Filled.Create, contentDescription = null)
+                                }
+                                else -> {
+                                    // 未选中时的图标
+                                    Icon(Icons.Outlined.Create, contentDescription = null)
+                                }
+                            }
+                        },
                         label = {
                             Text(
                                 text = "Details",
@@ -901,7 +914,16 @@ class MainActivity : AppCompatActivity() {
                         }
                     )
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Info, contentDescription = null) },
+                        icon = {  when (currentDestination?.route) {
+                            "3" -> {
+                                // 选中时的图标
+                                Icon(Icons.Filled.Info, contentDescription = null)
+                            }
+                            else -> {
+                                // 未选中时的图标
+                                Icon(Icons.Outlined.Info, contentDescription = null)
+                            }
+                        } },
                         label = {
                             Text(
                                 text = "About",
