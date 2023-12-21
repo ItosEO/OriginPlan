@@ -7,6 +7,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.util.Linkify
@@ -34,9 +35,11 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -100,6 +103,7 @@ data class OriginCardItem(
     val onClick: (() -> Unit)? = null
 ) {
 }
+
 // TODO 优化shizuku授权，合并check权限和request权限
 // TODO 拆分About页面
 class MainActivity : AppCompatActivity() {
@@ -114,7 +118,6 @@ class MainActivity : AppCompatActivity() {
 //        AppInfo("kuan", "com.coolapk.market")
 //        )
     val pkglist = mutableListOf<AppInfo>()
-    val REQUEST_CODE = 123
 //    val userServiceArgs = UserServiceArgs(
 //        ComponentName(
 //            BuildConfig.APPLICATION_ID,
@@ -137,19 +140,11 @@ class MainActivity : AppCompatActivity() {
         }
     private val BINDER_RECEVIED_LISTENER =
         OnBinderReceivedListener {
-            Toast.makeText(
-                context,
-                checkPermission().toString(),
-                Toast.LENGTH_SHORT
-            )
+            checkShizuku()
         }
     private val BINDER_DEAD_LISTENER: Shizuku.OnBinderDeadListener =
         Shizuku.OnBinderDeadListener {
-            Toast.makeText(
-                context,
-                checkPermission().toString(),
-                Toast.LENGTH_SHORT
-            )
+            checkShizuku()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -184,25 +179,37 @@ class MainActivity : AppCompatActivity() {
         }
 
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
-        try {
-            if (checkPermission(REQUEST_CODE)) {
-                //onGranted()
-            } else {
-                Shizuku.requestPermission(REQUEST_CODE)
-            }
-        } catch (_: Exception) {
-        }
-
+        checkShizuku()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
-        Toast.makeText(context, "shizuku:" + checkPermission().toString(), Toast.LENGTH_SHORT)
-            .show()
+    }
+
+    private fun checkShizuku() {
+        var b = true
+        var c = false
+        try {
+            if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) Shizuku.requestPermission(
+                0
+            ) else c = true
+        } catch (e: java.lang.Exception) {
+            if (checkSelfPermission("moe.shizuku.manager.permission.API_V23") == PackageManager.PERMISSION_GRANTED) c =
+                true
+            if (e.javaClass == IllegalStateException::class.java) {
+                b = false
+            }
+        }
+        if (!b || !c) {
+            Toast.makeText(
+                this,
+                "Shizuku " + (if (b) "已运行" else "未运行") + if (c) " 已授权" else " 未授权",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     private fun onRequestPermissionsResult() {
-        Toast.makeText(context, "shizuku:" + checkPermission().toString(), Toast.LENGTH_SHORT)
-            .show()
+        checkShizuku()
     }
 
     override fun onDestroy() {
@@ -272,40 +279,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkPermission(code: Int): Boolean {
-        if (Shizuku.isPreV11()) {
-            // Pre-v11 is unsupported
-            return false
-        }
-        return if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
-            // Granted
-            true
-        } else if (Shizuku.shouldShowRequestPermissionRationale()) {
-            // Users choose "Deny and don't ask again"
-            false
-        } else {
-            false
-        }
-    }
 
     private fun SetAppDisabled(
         isDisabled: MutableState<Boolean>,
         packagename: String,
         isExist: Boolean
     ) {
-        Toast.makeText(
-            context,
-            packagename + ": " + isDisabled.value.toString(),
-            Toast.LENGTH_SHORT
-        )
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
-            isDisabled.value = isAppDisabled(packagename)!!
-            Toast.makeText(context, isDisabled.value.toString(), Toast.LENGTH_SHORT)
+            val c = isAppDisabled(packagename)
+            if (c != isDisabled.value) {
+                isDisabled.value = c
+            } else {
+                Toast.makeText(this, "设置失败", Toast.LENGTH_SHORT).show()
+            }
+        } else {
+            Toast.makeText(this, "应用未安装", Toast.LENGTH_SHORT).show()
         }
     }
 
-    fun checkPermission(): Boolean {
+    private fun checkPermission(): Boolean {
         return try {
             Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
         } catch (err: Throwable) {
@@ -313,7 +306,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun getAppNameByPackageName(context: Context, packageName: String): String {
+    fun getAppIconByPackageName(packageName: String, context: Context): Drawable? {
+        return try {
+            val packageManager = context.packageManager
+            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
+            packageManager.getApplicationIcon(applicationInfo)
+        } catch (e: PackageManager.NameNotFoundException) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun getAppNameByPackageName(context: Context, packageName: String): String {
         val packageManager: PackageManager = context.packageManager
         val applicationInfo: ApplicationInfo? = try {
             packageManager.getApplicationInfo(packageName, 0)
@@ -865,10 +869,22 @@ class MainActivity : AppCompatActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
                     NavigationBarItem(
-                        icon = { Icon(Icons.Default.Create, contentDescription = null) },
+                        icon = {
+                            when (currentDestination?.route) {
+                                "1" -> {
+                                    // 选中时的图标
+                                    Icon(Icons.Filled.Settings, contentDescription = null)
+                                }
+
+                                else -> {
+                                    // 未选中时的图标
+                                    Icon(Icons.Outlined.Settings, contentDescription = null)
+                                }
+                            }
+                        },
                         label = {
                             Text(
-                                text = "Opt",
+                                text = "Optimization"
 //                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
                             )
                         },
@@ -890,6 +906,7 @@ class MainActivity : AppCompatActivity() {
                                     // 选中时的图标
                                     Icon(Icons.Filled.Create, contentDescription = null)
                                 }
+
                                 else -> {
                                     // 未选中时的图标
                                     Icon(Icons.Outlined.Create, contentDescription = null)
@@ -914,16 +931,19 @@ class MainActivity : AppCompatActivity() {
                         }
                     )
                     NavigationBarItem(
-                        icon = {  when (currentDestination?.route) {
-                            "3" -> {
-                                // 选中时的图标
-                                Icon(Icons.Filled.Info, contentDescription = null)
+                        icon = {
+                            when (currentDestination?.route) {
+                                "3" -> {
+                                    // 选中时的图标
+                                    Icon(Icons.Filled.Info, contentDescription = null)
+                                }
+
+                                else -> {
+                                    // 未选中时的图标
+                                    Icon(Icons.Outlined.Info, contentDescription = null)
+                                }
                             }
-                            else -> {
-                                // 未选中时的图标
-                                Icon(Icons.Outlined.Info, contentDescription = null)
-                            }
-                        } },
+                        },
                         label = {
                             Text(
                                 text = "About",
