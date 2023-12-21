@@ -104,7 +104,6 @@ data class OriginCardItem(
 ) {
 }
 
-// TODO 优化shizuku授权，合并check权限和request权限
 // TODO 拆分About页面
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
@@ -117,7 +116,7 @@ class MainActivity : AppCompatActivity() {
 //        AppInfo("zhuti", "com.bbk.theme"),
 //        AppInfo("kuan", "com.coolapk.market")
 //        )
-    val pkglist = mutableListOf<AppInfo>()
+    private val pkglist = mutableListOf<AppInfo>()
 //    val userServiceArgs = UserServiceArgs(
 //        ComponentName(
 //            BuildConfig.APPLICATION_ID,
@@ -182,6 +181,9 @@ class MainActivity : AppCompatActivity() {
         checkShizuku()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
+
+        // TODO OTA和多线程
+
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
     }
 
@@ -266,7 +268,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    fun show_author() {
+    private fun show_author() {
         try {
             val intent = Intent(Intent.ACTION_VIEW)
             intent.data = Uri.parse("coolmarket://u/3287595")
@@ -306,7 +308,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun getAppIconByPackageName(packageName: String, context: Context): Drawable? {
+    fun getAppIconByPackageName(packageName: String): Drawable? {
         return try {
             val packageManager = context.packageManager
             val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
@@ -330,7 +332,7 @@ class MainActivity : AppCompatActivity() {
         } ?: "Unknown App"
     }
 
-    fun openLink(url: String) {
+    private fun openLink(url: String) {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
@@ -357,7 +359,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun join_qq() {
+    private fun join_qq() {
         val is_join_succeed = joinQQGroup("SqLJvDGqjKNDvc_O5dx6A164eLSo4QBG")
         if (!is_join_succeed) {
             Toast.makeText(
@@ -399,8 +401,7 @@ class MainActivity : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                //SetTitle("原计划")
-                AppListContent()
+                About()
             }
         }
     }
@@ -415,9 +416,20 @@ class MainActivity : AppCompatActivity() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val appIcon = getAppIconByPackageName(appInfo.appPkg)
+
+            if (appIcon != null) {
+                Image(
+                    painter = rememberDrawablePainter(appIcon),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .align(Alignment.CenterVertically),
+                    contentDescription = null
+                )
+            }
             // 左边显示应用名称
             Column(modifier = Modifier.weight(0.5f)) {
                 Text(
@@ -775,7 +787,7 @@ class MainActivity : AppCompatActivity() {
             // TopAppBar
             TopAppBar(
 
-                title = { Text(text = "原计划") },
+                title = { Text(text = "原·初") },
 
 //                actions = {
 //                    IconButton(

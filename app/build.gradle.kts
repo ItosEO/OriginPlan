@@ -11,7 +11,7 @@ android {
         applicationId = "com.itos.originplan"
         minSdk = 29
         targetSdk = 34
-        versionCode = 1
+        versionCode = 7
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -66,7 +66,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("androidx.compose.material:material:1.5.4")
     implementation("com.google.accompanist:accompanist-drawablepainter:0.20.0")
-
+    implementation(files("libs/fastjson-1.2.9.jar"))
     implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
     implementation("com.google.android.material:material:1.11.0")
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.27.0")
