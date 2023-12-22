@@ -52,6 +52,7 @@ android {
 }
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2")
 
     implementation("dev.rikka.shizuku:api:12.2.0")
     implementation("dev.rikka.shizuku:provider:12.2.0")

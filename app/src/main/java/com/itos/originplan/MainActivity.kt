@@ -72,22 +72,27 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.alibaba.fastjson.JSONObject
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.ui.theme.OriginPlanTheme
+import com.itos.originplan.utils.NetUtils
 import com.itos.originplan.utils.OLog
 import com.itos.originplan.utils.OShizuku
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
-
 
 data class AppInfo(
     var appName: String,
@@ -182,9 +187,44 @@ class MainActivity : AppCompatActivity() {
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
 
-        // TODO OTA和多线程
+        // TODO OTA和多线程，用的kt的协程
+        update()
 
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
+    }
+
+    fun update() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            // 后台工作
+            val update = NetUtils.Get("https://itos.codegang.top/share/originplan/app_update.json")
+            // 切换到主线程进行 UI 操作
+            withContext(Dispatchers.Main) {
+                // UI 操作，例如显示 Toast
+                val jsonObject = JSONObject.parseObject(update)
+                val version = jsonObject.getString("version")
+                val url = jsonObject.getString("url")
+                val version_name = jsonObject.getString("version_name")
+                val log = jsonObject.getString("log")
+                OLog.i(
+                    "更新",
+                    update + "\n" + version + "\n" + url + "\n" + version_name + "\n" + log
+                )
+                if (BuildConfig.VERSION_CODE < version.toInt()) {
+                    OLog.i("更新", "有新版本")
+                    MaterialAlertDialogBuilder(context)
+                        .setTitle("有新版本")
+                        .setMessage("最新版本：$version_name($version)\n\n更新日志：\n$log")
+                        .setPositiveButton("前往更新") { dialog, which ->
+                            // 点击支付宝按钮后的操作
+                            openLink(url)
+                            finish()
+                        }
+                        .setCancelable(false)
+                        .show()
+                }
+
+            }
+        }
     }
 
     private fun checkShizuku() {
