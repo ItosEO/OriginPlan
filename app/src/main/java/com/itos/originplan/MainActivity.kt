@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -50,22 +51,25 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.windowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
@@ -106,8 +110,7 @@ data class OriginCardItem(
     val label: String,
     val content: String? = null,
     val onClick: (() -> Unit)? = null
-) {
-}
+)
 
 // TODO 拆分About页面
 class MainActivity : AppCompatActivity() {
@@ -187,7 +190,6 @@ class MainActivity : AppCompatActivity() {
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
 
-        // TODO OTA和多线程，用的kt的协程
         update()
 
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
@@ -245,7 +247,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(
                 this,
                 "Shizuku " + (if (b) "已运行" else "未运行") + if (c) " 已授权" else " 未授权",
-                Toast.LENGTH_SHORT
+                Toast.LENGTH_LONG
             ).show()
         }
     }
@@ -419,16 +421,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isInstalled(packageName: String): Boolean {
-        val pm = context.packageManager;
+        val pm = context.packageManager
         try {
             val packageInfo = pm.getPackageInfo(packageName, 0)
             OLog.i("应用安装判断", "$packageName 已安装")
-            return packageInfo != null;
+            return packageInfo != null
         } catch (ep: Throwable) {
             OLog.i("应用安装判断", "$packageName 未安装")
             OLog.e("应用安装判断报错", ep)
         }
-        return false;
+        return false
     }
 
     @Preview(showBackground = true)
@@ -482,7 +484,7 @@ class MainActivity : AppCompatActivity() {
 
             // 中间显示禁用状态文本
             Text(
-                text = if (!appInfo.isExist) "Unknow" else if (isDisabled.value) "Disable" else "Enable",
+                text = if (!appInfo.isExist) "Unknown" else if (isDisabled.value) "Disable" else "Enable",
                 color = if (!appInfo.isExist) Color(0xFFFF6E40)
                 else if (isDisabled.value) Color(0xFFFF5252)
                 else Color(0xFF59F0A6),
@@ -505,7 +507,7 @@ class MainActivity : AppCompatActivity() {
                 Icon(
                     imageVector = icon,
 
-                    contentDescription = if (!appInfo.isExist) "Unknow" else if (isDisabled.value) "Disable" else "Enable"
+                    contentDescription = if (!appInfo.isExist) "Unknown" else if (isDisabled.value) "Disable" else "Enable"
                 )
             }
 
@@ -605,7 +607,8 @@ class MainActivity : AppCompatActivity() {
         buttons: (@Composable () -> Unit)? = null
     ) {
         ElevatedCard(
-            colors = colors
+            colors = colors,
+            elevation = CardDefaults.elevatedCardElevation( defaultElevation = 5.dp,)
         ) {
             Column(
                 modifier = Modifier
@@ -689,7 +692,7 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
     fun DonateWidget() {
-        val context = LocalContext.current
+        LocalContext.current
 
         val items = listOf(
             OriginCardItem(
@@ -722,14 +725,14 @@ class MainActivity : AppCompatActivity() {
         val items = listOf(
             OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
-                label = "BilibBili（开发者）",
+                label = "BiliBili（开发者）",
                 onClick = {
                     openLink("https://space.bilibili.com/329223542")
                 }
             ),
             OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
-                label = "BilibBili（合作伙伴）",
+                label = "BiliBili（合作伙伴）",
                 onClick = {
                     openLink("https://space.bilibili.com/1289434708")
                 }
@@ -792,14 +795,46 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun About() {
-        Column {
-            // TopAppBar
-            TopAppBar(title = { Text(text = "关于") })
+//        Column {
+//             TopAppBar(title = { Text(text = "关于") })
+//            LazyColumn(
+//                contentPadding = PaddingValues(16.dp),
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .padding(16.dp),
+//                verticalArrangement = Arrangement.spacedBy(16.dp),
+//            ) {
+//                item {
+//                    StatusWidget()
+//                }
+//                item {
+//                    DonateWidget()
+//                }
+//                item {
+//                    DiscussWidget()
+//                }
+//                item {
+//                    OpenSourceWidget()
+//                }
+//            }
+//        }
+        Scaffold(
+            modifier = Modifier
+                .windowInsetsPadding(windowInsets)
+                .fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(text = "关于")
+                    },
+                )
+            },
+        ) {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(it),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 item {
@@ -811,9 +846,6 @@ class MainActivity : AppCompatActivity() {
                 item {
                     DiscussWidget()
                 }
-                item {
-                    OpenSourceWidget()
-                }
             }
         }
     }
@@ -822,85 +854,12 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun Details() {
         val appList = remember { generateAppList(context) }
-        var expanded by remember { mutableStateOf(false) }
         Column {
             // TopAppBar
             TopAppBar(
 
                 title = { Text(text = "原·初") },
 
-//                actions = {
-//                    IconButton(
-//                        onClick = { expanded = true }
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Default.List,
-//                            // tint = Color.White,
-//                            contentDescription = "菜单"
-//                        )
-//                    }
-//                    DropdownMenu(
-//                        expanded = expanded,
-//                        onDismissRequest = { expanded = false },
-//                        modifier = Modifier.padding(8.dp)
-//                    ) {
-//                        // 添加菜单项
-//
-//
-//                        DropdownMenuItem(
-//                            text = { Text(text = "开发者酷安") },
-//                            onClick = {
-//                                expanded =
-//                                    false; show_author()
-//                            },
-//                            leadingIcon = {
-//                                Icon(
-//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
-//                                    contentDescription = "Coolapk"
-//                                )
-//                            }
-//                        )
-//                        DropdownMenuItem(
-//                            text = { Text(text = "捐赠") },
-//                            onClick = {
-//                                expanded =
-//                                    false; gift()
-//                            },
-//                            leadingIcon = {
-//                                Icon(
-//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_giftcard),
-//                                    contentDescription = "money"
-//                                )
-//                            }
-//                        )
-//                        DropdownMenuItem(
-//                            text = { Text(text = "GitHub") },
-////                                colors = MenuDefaults.itemColors(textColor = Color.White),
-//                            onClick = {
-//                                expanded =
-//                                    false; openLink("https://github.com/ItosEO/OriginPlan")
-//                            },
-//                            leadingIcon = {
-//                                Icon(
-//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
-//                                    contentDescription = "GitHub"
-//                                )
-//                            }
-//                        )
-//                        DropdownMenuItem(
-//                            text = { Text(text = "许可证") },
-//                            onClick = { expanded = false; showLicenses() },
-//                            leadingIcon = {
-//                                Icon(
-//                                    imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
-//                                    contentDescription = "GitHub"
-//                                )
-//                            }
-//                        )
-//
-//                        // 添加更多菜单项...
-//                    }
-//                }
             )
 
             // AppList
@@ -913,120 +872,252 @@ class MainActivity : AppCompatActivity() {
     @Composable
     fun AppListScreen(context: Context) {
         val navController = rememberNavController()
-
+        val isLandscapeScreen =
+            LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
         Scaffold(
             //设置底部导航栏
             bottomBar = {
-                NavigationBar {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
-                    NavigationBarItem(
-                        icon = {
-                            when (currentDestination?.route) {
-                                "1" -> {
-                                    // 选中时的图标
-                                    Icon(Icons.Filled.Settings, contentDescription = null)
-                                }
+                if (!isLandscapeScreen) {
+                    NavigationBar {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
+                        NavigationBarItem(
 
-                                else -> {
-                                    // 未选中时的图标
-                                    Icon(Icons.Outlined.Settings, contentDescription = null)
+                            icon = {
+                                when (currentDestination?.route) {
+                                    "1" -> {
+                                        // 选中时的图标
+                                        Icon(Icons.Filled.Settings, contentDescription = null)
+                                    }
+
+                                    else -> {
+                                        // 未选中时的图标
+                                        Icon(Icons.Outlined.Settings, contentDescription = null)
+                                    }
                                 }
-                            }
-                        },
-                        label = {
-                            Text(
-                                text = "Optimization"
+                            },
+                            label = {
+                                Text(
+                                    text = "Optimization"
 //                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
-                            )
-                        },
-                        selected = currentDestination?.route == "1",
-                        onClick = {
-                            navController.navigate("1") {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
+                                )
+                            },
+                            selected = currentDestination?.route == "1",
+                            alwaysShowLabel = false,
+                            onClick = {
+                                navController.navigate("1") {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
-                        }
-                    )
-                    NavigationBarItem(
-                        icon = {
-                            when (currentDestination?.route) {
-                                "2" -> {
-                                    // 选中时的图标
-                                    Icon(Icons.Filled.Create, contentDescription = null)
-                                }
+                        )
+                        NavigationBarItem(
+                            icon = {
+                                when (currentDestination?.route) {
+                                    "2" -> {
+                                        // 选中时的图标
+                                        Icon(Icons.Filled.Create, contentDescription = null)
+                                    }
 
-                                else -> {
-                                    // 未选中时的图标
-                                    Icon(Icons.Outlined.Create, contentDescription = null)
+                                    else -> {
+                                        // 未选中时的图标
+                                        Icon(Icons.Outlined.Create, contentDescription = null)
+                                    }
                                 }
-                            }
-                        },
-                        label = {
-                            Text(
-                                text = "Details",
+                            },
+                            label = {
+                                Text(
+                                    text = "Details",
 //                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
-                            )
-                        },
-                        selected = currentDestination?.route == "2",
-                        onClick = {
-                            navController.navigate("2") {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
+                                )
+                            },
+                            selected = currentDestination?.route == "2",
+                            alwaysShowLabel = false,
+                            onClick = {
+                                navController.navigate("2") {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
-                        }
-                    )
-                    NavigationBarItem(
-                        icon = {
-                            when (currentDestination?.route) {
-                                "3" -> {
-                                    // 选中时的图标
-                                    Icon(Icons.Filled.Info, contentDescription = null)
-                                }
+                        )
+                        NavigationBarItem(
+                            icon = {
+                                when (currentDestination?.route) {
+                                    "3" -> {
+                                        // 选中时的图标
+                                        Icon(Icons.Filled.Info, contentDescription = null)
+                                    }
 
-                                else -> {
-                                    // 未选中时的图标
-                                    Icon(Icons.Outlined.Info, contentDescription = null)
+                                    else -> {
+                                        // 未选中时的图标
+                                        Icon(Icons.Outlined.Info, contentDescription = null)
+                                    }
                                 }
-                            }
-                        },
-                        label = {
-                            Text(
-                                text = "About",
+                            },
+                            label = {
+                                Text(
+                                    text = "About",
 //                                modifier = Modifier.alpha(if (currentDestination?.route == "About") 1f else 0f)
-                            )
-                        },
-                        selected = currentDestination?.route == "3",
-                        onClick = {
-                            navController.navigate("3") {
-                                popUpTo(navController.graph.startDestinationId) {
-                                    saveState = true
+                                )
+                            },
+                            selected = currentDestination?.route == "3",
+                            alwaysShowLabel = false,
+                            onClick = {
+                                navController.navigate("3") {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
-                        }
-                    )
+                        )
+                    }
+
+                } else {
+                    NavigationRail {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1f)
+                        )
+                        NavigationRailItem(
+
+                            icon = {
+                                when (currentDestination?.route) {
+                                    "1" -> {
+                                        // 选中时的图标
+                                        Icon(Icons.Filled.Settings, contentDescription = null)
+                                    }
+
+                                    else -> {
+                                        // 未选中时的图标
+                                        Icon(Icons.Outlined.Settings, contentDescription = null)
+                                    }
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = "Optimization"
+//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
+                                )
+                            },
+                            selected = currentDestination?.route == "1",
+                            alwaysShowLabel = false,
+                            onClick = {
+                                navController.navigate("1") {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                        NavigationRailItem(
+                            icon = {
+                                when (currentDestination?.route) {
+                                    "2" -> {
+                                        // 选中时的图标
+                                        Icon(Icons.Filled.Create, contentDescription = null)
+                                    }
+
+                                    else -> {
+                                        // 未选中时的图标
+                                        Icon(Icons.Outlined.Create, contentDescription = null)
+                                    }
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = "Details",
+//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
+                                )
+                            },
+                            selected = currentDestination?.route == "2",
+                            alwaysShowLabel = false,
+                            onClick = {
+                                navController.navigate("2") {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                        NavigationRailItem(
+                            icon = {
+                                when (currentDestination?.route) {
+                                    "3" -> {
+                                        // 选中时的图标
+                                        Icon(Icons.Filled.Info, contentDescription = null)
+                                    }
+
+                                    else -> {
+                                        // 未选中时的图标
+                                        Icon(Icons.Outlined.Info, contentDescription = null)
+                                    }
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = "About",
+//                                modifier = Modifier.alpha(if (currentDestination?.route == "About") 1f else 0f)
+                                )
+                            },
+                            selected = currentDestination?.route == "3",
+                            alwaysShowLabel = false,
+                            onClick = {
+                                navController.navigate("3") {
+                                    popUpTo(navController.graph.startDestinationId) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
                 }
             }
 
         ) {
-
-            NavHost(
-                navController = navController,
-                startDestination = "2"
+            if (isLandscapeScreen){
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 72.dp)
             ) {
-                composable("2") { Details() }
-                composable("3") { About() }
-                composable("1") { About() }
+                // 在这里放置你的内容
+                NavHost(
+                    navController = navController,
+                    startDestination = "2"
+                ) {
+                    composable("2") { Details() }
+                    composable("3") { About() }
+                    composable("1") { About() }
+                    // 添加其他页面的 composable 函数，类似上面的示例
+                }
+            }
+        }else{
 
-                // 添加其他页面的 composable 函数，类似上面的示例
+                NavHost(
+                    navController = navController,
+                    startDestination = "2"
+                ) {
+                    composable("2") { Details() }
+                    composable("3") { About() }
+                    composable("1") { About() }
+                    // 添加其他页面的 composable 函数，类似上面的示例
+                }
             }
         }
 
