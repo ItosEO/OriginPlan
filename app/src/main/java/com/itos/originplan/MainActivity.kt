@@ -190,12 +190,12 @@ class MainActivity : AppCompatActivity() {
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
 
-        update()
+        update_notice()
 
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
     }
 
-    fun update() {
+    fun update_notice() {
         lifecycleScope.launch(Dispatchers.IO) {
             // 后台工作
             val update = NetUtils.Get("https://itos.codegang.top/share/originplan/app_update.json")
@@ -207,9 +207,11 @@ class MainActivity : AppCompatActivity() {
                 val url = jsonObject.getString("url")
                 val version_name = jsonObject.getString("version_name")
                 val log = jsonObject.getString("log")
+                val isShowNotice = jsonObject.getBoolean("isShowNotice")
+                val notice = jsonObject.getString("notice")
                 OLog.i(
                     "更新",
-                    update + "\n" + version + "\n" + url + "\n" + version_name + "\n" + log
+                    update + "\n" + version + "\n" + url + "\n" + version_name + "\n" + log+ "\n" + isShowNotice + "\n" + notice
                 )
                 if (BuildConfig.VERSION_CODE < version.toInt()) {
                     OLog.i("更新", "有新版本")
@@ -217,12 +219,22 @@ class MainActivity : AppCompatActivity() {
                         .setTitle("有新版本")
                         .setMessage("最新版本：$version_name($version)\n\n更新日志：\n$log")
                         .setPositiveButton("前往更新") { dialog, which ->
-                            // 点击支付宝按钮后的操作
                             openLink(url)
                             finish()
                         }
                         .setCancelable(false)
                         .show()
+                } else{
+                    if (isShowNotice){
+                        OLog.i("公告", "显示")
+                        MaterialAlertDialogBuilder(context)
+                            .setTitle("公告")
+                            .setMessage(notice)
+                            .setPositiveButton("我知道了") { dialog, which ->
+                                dialog.dismiss()
+                            }
+                            .show()
+                    }
                 }
 
             }
