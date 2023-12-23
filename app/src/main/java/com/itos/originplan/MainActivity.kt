@@ -31,6 +31,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -45,6 +46,7 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -455,7 +457,7 @@ class MainActivity : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                About()
+                Opt()
             }
         }
     }
@@ -465,6 +467,7 @@ class MainActivity : AppCompatActivity() {
     fun AppListItem(appInfo: AppInfo) {
         //让 compose监听这个的变化
         var isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
+
 
         Row(
             modifier = Modifier
@@ -524,12 +527,14 @@ class MainActivity : AppCompatActivity() {
             }
 
         }
+
     }
 
 
     @Composable
     fun AppList(appList: List<AppInfo>) {
-        LazyColumn {
+        LazyColumn( verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()) {
             items(appList) { appInfo ->
                 AppListItem(
                     appInfo = appInfo
@@ -804,32 +809,47 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun Opt(){
+
+
+                Column(modifier = Modifier
+                    .fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+
+                    ) {
+                    TopAppBar(
+                        title = {
+                            Text(text = "优化")
+                        },
+                    )
+                    FilledTonalButton(
+                        modifier = Modifier
+                            .size(width = 150.dp, height = 60.dp),
+                        shape = RoundedCornerShape(30),
+                        onClick = { Toast.makeText(context,"1",Toast.LENGTH_LONG).show() }) {
+                        Text("一键优化")
+                    }
+                    FilledTonalButton(
+                        modifier = Modifier
+                            .size(width = 150.dp, height = 60.dp),
+                        shape = RoundedCornerShape(30),
+                        onClick = { Toast.makeText(context,"1",Toast.LENGTH_LONG).show() }) {
+                        Text("还魂丹")
+                    }
+                }
+
+
+
+
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun About() {
-//        Column {
-//             TopAppBar(title = { Text(text = "关于") })
-//            LazyColumn(
-//                contentPadding = PaddingValues(16.dp),
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(16.dp),
-//                verticalArrangement = Arrangement.spacedBy(16.dp),
-//            ) {
-//                item {
-//                    StatusWidget()
-//                }
-//                item {
-//                    DonateWidget()
-//                }
-//                item {
-//                    DiscussWidget()
-//                }
-//                item {
-//                    OpenSourceWidget()
-//                }
-//            }
-//        }
         Scaffold(
             modifier = Modifier
                 .windowInsetsPadding(windowInsets)
@@ -857,6 +877,9 @@ class MainActivity : AppCompatActivity() {
                 }
                 item {
                     DiscussWidget()
+                }
+                item{
+                    OpenSourceWidget()
                 }
             }
         }
@@ -1115,7 +1138,7 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     composable("2") { Details() }
                     composable("3") { About() }
-                    composable("1") { About() }
+                    composable("1") { Opt() }
                     // 添加其他页面的 composable 函数，类似上面的示例
                 }
             }
@@ -1127,7 +1150,7 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     composable("2") { Details() }
                     composable("3") { About() }
-                    composable("1") { About() }
+                    composable("1") { Opt() }
                     // 添加其他页面的 composable 函数，类似上面的示例
                 }
             }
