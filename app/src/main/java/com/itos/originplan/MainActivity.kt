@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -75,6 +76,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -127,6 +129,7 @@ class MainActivity : AppCompatActivity() {
 //        AppInfo("kuan", "com.coolapk.market")
 //        )
     private val pkglist = mutableListOf<AppInfo>()
+    private val optlist = mutableListOf<AppInfo>()
 //    val userServiceArgs = UserServiceArgs(
 //        ComponentName(
 //            BuildConfig.APPLICATION_ID,
@@ -213,7 +216,7 @@ class MainActivity : AppCompatActivity() {
                 val notice = jsonObject.getString("notice")
                 OLog.i(
                     "更新",
-                    update + "\n" + version + "\n" + url + "\n" + version_name + "\n" + log+ "\n" + isShowNotice + "\n" + notice
+                    update + "\n" + version + "\n" + url + "\n" + version_name + "\n" + log + "\n" + isShowNotice + "\n" + notice
                 )
                 if (BuildConfig.VERSION_CODE < version.toInt()) {
                     OLog.i("更新", "有新版本")
@@ -226,8 +229,8 @@ class MainActivity : AppCompatActivity() {
                         }
                         .setCancelable(false)
                         .show()
-                } else{
-                    if (isShowNotice){
+                } else {
+                    if (isShowNotice) {
                         OLog.i("公告", "显示")
                         MaterialAlertDialogBuilder(context)
                             .setTitle("公告")
@@ -533,8 +536,10 @@ class MainActivity : AppCompatActivity() {
 
     @Composable
     fun AppList(appList: List<AppInfo>) {
-        LazyColumn( verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
             items(appList) { appInfo ->
                 AppListItem(
                     appInfo = appInfo
@@ -625,7 +630,7 @@ class MainActivity : AppCompatActivity() {
     ) {
         ElevatedCard(
             colors = colors,
-            elevation = CardDefaults.elevatedCardElevation( defaultElevation = 5.dp,)
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 5.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -812,37 +817,67 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    fun Opt(){
-
-
-                Column(modifier = Modifier
+    fun Opt() {
+        Scaffold(topBar = {
+            TopAppBar(
+                title = {
+                    Text(text = "优化")
+                },
+            )
+        }) {
+            Column(
+                modifier = Modifier
                     .fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-
-                    ) {
-                    TopAppBar(
-                        title = {
-                            Text(text = "优化")
-                        },
-                    )
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center // 将子项垂直居中
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(vertical = 45.dp)
+                ) {
                     FilledTonalButton(
                         modifier = Modifier
-                            .size(width = 150.dp, height = 60.dp),
+                            .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
-                        onClick = { Toast.makeText(context,"1",Toast.LENGTH_LONG).show() }) {
+                        onClick = { /* 点击事件 */ }
+                    ) {
                         Text("一键优化")
                     }
+                    Spacer(modifier = Modifier.width(25.dp))
                     FilledTonalButton(
                         modifier = Modifier
-                            .size(width = 150.dp, height = 60.dp),
+                            .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
-                        onClick = { Toast.makeText(context,"1",Toast.LENGTH_LONG).show() }) {
-                        Text("还魂丹")
+                        onClick = { /* 点击事件 */ }
+                    ) {
+                        Text("还原")
                     }
                 }
+                Row(
+                    modifier = Modifier
+                        .padding(vertical = 45.dp)
+                ) {
+                    FilledTonalButton(
+                        modifier = Modifier
+                            .size(width = 130.dp, height = 60.dp),
+                        shape = RoundedCornerShape(30),
+                        onClick = { Toast.makeText(context,"开发中...",Toast.LENGTH_SHORT) }
+                    ) {
+                        Text("调整Android进程设置",textAlign = TextAlign.Center,)
+                    }
+                    Spacer(modifier = Modifier.width(25.dp))
+                    FilledTonalButton(
+                        modifier = Modifier
+                            .size(width = 130.dp, height = 60.dp),
+                        shape = RoundedCornerShape(30),
+                        onClick = { Toast.makeText(context,"开发中...",Toast.LENGTH_SHORT) }
+                    ) {
+                        Text("还原\n进程设置",textAlign = TextAlign.Center)
+                    }
+                }
+            }
 
-
+        }
 
 
     }
@@ -878,7 +913,7 @@ class MainActivity : AppCompatActivity() {
                 item {
                     DiscussWidget()
                 }
-                item{
+                item {
                     OpenSourceWidget()
                 }
             }
@@ -895,7 +930,7 @@ class MainActivity : AppCompatActivity() {
 
                 title = { Text(text = "原·初") },
 
-            )
+                )
 
             // AppList
             AppList(appList = appList)
@@ -1125,24 +1160,24 @@ class MainActivity : AppCompatActivity() {
             }
 
         ) {
-            if (isLandscapeScreen){
-            Row(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(start = 72.dp)
-            ) {
-                // 在这里放置你的内容
-                NavHost(
-                    navController = navController,
-                    startDestination = "2"
+            if (isLandscapeScreen) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(start = 72.dp)
                 ) {
-                    composable("2") { Details() }
-                    composable("3") { About() }
-                    composable("1") { Opt() }
-                    // 添加其他页面的 composable 函数，类似上面的示例
+                    // 在这里放置你的内容
+                    NavHost(
+                        navController = navController,
+                        startDestination = "2"
+                    ) {
+                        composable("2") { Details() }
+                        composable("3") { About() }
+                        composable("1") { Opt() }
+                        // 添加其他页面的 composable 函数，类似上面的示例
+                    }
                 }
-            }
-        }else{
+            } else {
 
                 NavHost(
                     navController = navController,
