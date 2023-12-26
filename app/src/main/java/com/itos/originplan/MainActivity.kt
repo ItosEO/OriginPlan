@@ -17,6 +17,7 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,7 +38,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Create
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Create
@@ -45,6 +49,8 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -68,6 +74,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -98,9 +105,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
+import rikka.shizuku.ShizukuRemoteProcess
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
+import java.io.OutputStream
+
 
 data class AppInfo(
     var appName: String,
@@ -119,17 +129,17 @@ data class OriginCardItem(
 // TODO 拆分About页面
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
-    //var userService: IUserService? = null
-
-    //    val pkglist: List<AppInfo> = listOf(
-//        AppInfo("mt", "bin.mt.plus.canary"),
-//        AppInfo("origin read", "com.vivo.newsreader"),
-//        AppInfo("douyin", "com.ss.android.ugc.aweme"),
-//        AppInfo("zhuti", "com.bbk.theme"),
-//        AppInfo("kuan", "com.coolapk.market")
-//        )
+    var ReturnValue = 0
+    var br = false
+    var h1: Thread? = null
+    var h2: Thread? = null
+    var h3: Thread? = null
+    var b = true
+    var c = false
     private val pkglist = mutableListOf<AppInfo>()
     private val optlist = mutableListOf<AppInfo>()
+    //var userService: IUserService? = null
+
 //    val userServiceArgs = UserServiceArgs(
 //        ComponentName(
 //            BuildConfig.APPLICATION_ID,
@@ -174,16 +184,25 @@ class MainActivity : AppCompatActivity() {
         }
         try {
             // 打开 pkglistfile 文件输入流
-            val inputStream = resources.openRawResource(R.raw.pkglist)
-            val reader = BufferedReader(InputStreamReader(inputStream))
+            val inputStream_pkg = resources.openRawResource(R.raw.pkglist)
+            val reader_pkg = BufferedReader(InputStreamReader(inputStream_pkg))
+            val inputStream_opt = resources.openRawResource(R.raw.optlist)
+            val reader_opt = BufferedReader(InputStreamReader(inputStream_opt))
 
             // 逐行读取文件内容
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                val packageName = line!!.trim()
+            var line_pkg: String?
+            var line_opt: String?
+            while (reader_pkg.readLine().also { line_pkg = it } != null) {
+                val packageName = line_pkg!!.trim()
                 // 创建 AppInfo 对象，并添加到列表
                 val appInfo = AppInfo(appName = "", appPkg = packageName)
                 pkglist.add(appInfo)
+            }
+            while (reader_opt.readLine().also { line_opt = it } != null) {
+                val packageName = line_opt!!.trim()
+                // 创建 AppInfo 对象，并添加到列表
+                val appInfo = AppInfo(appName = "", appPkg = packageName)
+                optlist.add(appInfo)
             }
         } catch (e: Exception) {
             // 处理异常，例如文件不存在等情况
@@ -198,6 +217,30 @@ class MainActivity : AppCompatActivity() {
         update_notice()
 
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
+    }
+
+    private fun opt_setappstauts(status: Boolean) {
+        // 遍历app list
+        for (appInfo in optlist) {
+            if (appInfo.isExist) SetAppDisabled(
+                mutableStateOf(status),
+                appInfo.appPkg,
+                appInfo.isExist
+            )
+        }
+        if (!status) {
+            MaterialAlertDialogBuilder(context)
+                .setTitle("完成")
+                .setMessage("一键优化完成")
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        } else {
+            MaterialAlertDialogBuilder(context)
+                .setTitle("完成")
+                .setMessage("还原完成")
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+        }
     }
 
     fun update_notice() {
@@ -247,8 +290,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkShizuku() {
-        var b = true
-        var c = false
+//        var b = true
+//        var c = false
         try {
             if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) Shizuku.requestPermission(
                 0
@@ -281,6 +324,93 @@ class MainActivity : AppCompatActivity() {
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
+//    private fun exec(s: String): String {
+//
+//    }
+    private fun uninstall(Appinfo:AppInfo){
+        val t = ShizukuExec("pm uninstall --user 0 ${Appinfo.appPkg}".toByteArray())
+        // 在协程中调用挂起函数
+        MaterialAlertDialogBuilder(context)
+            .setTitle("结果")
+            .setMessage(t+"\n"+Appinfo.appPkg)
+            .setPositiveButton("ok") { _, _ -> }
+            .show()
+    }
+    private fun reinstall(Appinfo:AppInfo){
+        Toast.makeText(context,"请稍等...",Toast.LENGTH_LONG).show()
+        val t = ShizukuExec("pm install-existing ${Appinfo.appPkg}".toByteArray())
+        // 在协程中调用挂起函数
+        MaterialAlertDialogBuilder(context)
+            .setTitle("结果")
+            .setMessage(t+"\n"+Appinfo.appPkg)
+            .setPositiveButton("ok") { _, _ -> }
+            .show()
+    }
+    private fun ShizukuExec(cmd: ByteArray): String? {
+        if (br) {
+            return "正在执行其他操作"
+        }
+        if (!b || !c) {
+            Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
+            return "Shizuku 状态异常"
+        }
+        br = true
+
+        val p: ShizukuRemoteProcess
+        val op = arrayOfNulls<String>(1)
+        try {
+            OLog.i("运行shell", "开始运行$cmd")
+            p = Shizuku.newProcess(arrayOf("sh"), null, null)
+            val out: OutputStream = p.outputStream
+            out.write(cmd)
+            out.flush()
+            out.close()
+            h2 = Thread {
+                try {
+                    val outText = StringBuilder()
+                    val reader = BufferedReader(InputStreamReader(p.inputStream))
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        outText.append(line).append("\n")
+                    }
+                    reader.close()
+                    val output = outText.toString()
+                    OLog.i("运行shell", "Output_Normal:\n$output")
+                    op[0] = output
+                } catch (ignored: java.lang.Exception) {
+                }
+            }
+            h2!!.start()
+            h3 = Thread {
+                try {
+                    val outText = StringBuilder()
+                    val reader = BufferedReader(InputStreamReader(p.getErrorStream()))
+                    var line: String?
+                    while (reader.readLine().also { line = it } != null) {
+                        outText.append(line).append("\n")
+                    }
+                    reader.close()
+                    val output = outText.toString()
+                    op[0] += output
+                    OLog.i("运行shell", "Output_Error:\n$output")
+                } catch (ignored: java.lang.Exception) {
+                }
+            }
+            h3!!.start()
+
+            p.waitFor()
+            h2!!.join()
+            ReturnValue = p.exitValue()
+            OLog.i("运行shell", "跑完了")
+            p.destroyForcibly()
+            br = false
+
+            return op[0]
+        } catch (ignored: java.lang.Exception) {
+        }
+        return "null"
+    }
+
     private fun showImageDialog(imageName: String) {
         val builder: AlertDialog.Builder = MaterialAlertDialogBuilder(this)
 
@@ -302,30 +432,6 @@ class MainActivity : AppCompatActivity() {
         builder.show() // 显示对话框
     }
 
-    fun gift() {
-        val show_text = """
-                您可以通过微信或支付宝来捐赠
-
-                如果您有条件的话,希望可以捐赠一点
-                不求多少,支持一下我们,非常感谢
-
-                本工具永久免费!!!
-                """.trimIndent()
-        MaterialAlertDialogBuilder(this)
-            .setTitle("捐赠")
-            .setMessage(show_text)
-            .setPositiveButton("支付宝") { dialog, which ->
-                // 点击支付宝按钮后的操作
-                dialog.dismiss()
-                showImageDialog("zfb.jpg")
-            }
-            .setNegativeButton("微信") { dialog, which ->
-                // 点击微信按钮后的操作
-                dialog.dismiss()
-                showImageDialog("wx.png")
-            }
-            .show()
-    }
 
     private fun show_author() {
         try {
@@ -367,7 +473,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun getAppIconByPackageName(packageName: String): Drawable? {
+    private fun getAppIconByPackageName(packageName: String): Drawable? {
         return try {
             val packageManager = context.packageManager
             val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
@@ -460,7 +566,12 @@ class MainActivity : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                Opt()
+                val appList = listOf(
+                    AppInfo("App1", "com.example.app1", true),
+                    AppInfo("App2", "com.example.app2", true),
+                    // Add more items as needed
+                )
+                AppList(appList)
             }
         }
     }
@@ -470,7 +581,7 @@ class MainActivity : AppCompatActivity() {
     fun AppListItem(appInfo: AppInfo) {
         //让 compose监听这个的变化
         var isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
-
+        var isMenuVisible by remember { mutableStateOf(false) }
 
         Row(
             modifier = Modifier
@@ -509,7 +620,6 @@ class MainActivity : AppCompatActivity() {
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(end = 16.dp)
             )
-
             // 右边是一个按钮
             IconButton(
                 onClick = { SetAppDisabled(isDisabled, appInfo.appPkg, appInfo.isExist) }
@@ -521,12 +631,49 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Icons.Default.Warning
                 }
-                // icon = if (isDisabled) Icons.Default.Check else Icons.Default.Close
                 Icon(
                     imageVector = icon,
 
                     contentDescription = if (!appInfo.isExist) "Unknown" else if (isDisabled.value) "Disable" else "Enable"
                 )
+            }
+            IconButton(
+                onClick = { isMenuVisible = true }
+            ) {
+
+                Icon(
+                    imageVector = Icons.Default.MoreVert,
+                    contentDescription = "more"
+                )
+                DropdownMenu(
+                    expanded = isMenuVisible,
+                    onDismissRequest = { isMenuVisible = false },
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                ) {
+                    DropdownMenuItem(
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "uninstall"
+                            )
+                        },
+                        text = { Text(text = "尝试卸载") }, onClick = {uninstall(appInfo)}
+                            // 处理菜单项点击事件，这里可以添加卸载逻辑
+                           )
+                    DropdownMenuItem(
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "uninstall"
+                            )
+                        }, text = { Text(text = "尝试重装") }, onClick = {
+                            // 处理菜单项点击事件，这里可以添加重装逻辑
+                            // ...
+
+                            // 关闭菜单
+                            isMenuVisible = false
+                        })
+                }
             }
 
         }
@@ -540,12 +687,13 @@ class MainActivity : AppCompatActivity() {
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            items(appList) { appInfo ->
+            items(optlist + appList) { appInfo ->
                 AppListItem(
                     appInfo = appInfo
                 )
             }
         }
+
     }
 
     private fun showLicenses() {
@@ -750,8 +898,7 @@ class MainActivity : AppCompatActivity() {
                 label = "BiliBili（开发者）",
                 onClick = {
                     openLink("https://space.bilibili.com/329223542")
-                }
-            ),
+                }),
             OriginCardItem(
                 icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
                 label = "BiliBili（合作伙伴）",
@@ -839,7 +986,7 @@ class MainActivity : AppCompatActivity() {
                         modifier = Modifier
                             .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
-                        onClick = { /* 点击事件 */ }
+                        onClick = { opt_setappstauts(false) }
                     ) {
                         Text("一键优化")
                     }
@@ -848,7 +995,7 @@ class MainActivity : AppCompatActivity() {
                         modifier = Modifier
                             .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
-                        onClick = { /* 点击事件 */ }
+                        onClick = { opt_setappstauts(true) }
                     ) {
                         Text("还原")
                     }
@@ -861,18 +1008,22 @@ class MainActivity : AppCompatActivity() {
                         modifier = Modifier
                             .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
-                        onClick = { Toast.makeText(context,"开发中...",Toast.LENGTH_SHORT) }
+                        onClick = {
+                            Toast.makeText(context, "开发中...", Toast.LENGTH_SHORT).show()
+                        }
                     ) {
-                        Text("调整Android进程设置",textAlign = TextAlign.Center,)
+                        Text("调整Android进程设置", textAlign = TextAlign.Center)
                     }
                     Spacer(modifier = Modifier.width(25.dp))
                     FilledTonalButton(
                         modifier = Modifier
                             .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
-                        onClick = { Toast.makeText(context,"开发中...",Toast.LENGTH_SHORT) }
+                        onClick = {
+                            Toast.makeText(context, "开发中...", Toast.LENGTH_SHORT).show()
+                        }
                     ) {
-                        Text("还原\n进程设置",textAlign = TextAlign.Center)
+                        Text("还原\n进程设置", textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -1203,6 +1354,16 @@ class MainActivity : AppCompatActivity() {
         var a: Boolean
         // 这里添加你的应用信息
         for (appinfo in pkglist) {
+            if (isInstalled(appinfo.appPkg)) {
+                appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
+                a = isAppDisabled(appinfo.appPkg)
+                appinfo.isDisabled = a
+            } else {
+                appinfo.isExist = false
+                appinfo.appName = "未安装"
+            }
+        }
+        for (appinfo in optlist) {
             if (isInstalled(appinfo.appPkg)) {
                 appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
                 a = isAppDisabled(appinfo.appPkg)
