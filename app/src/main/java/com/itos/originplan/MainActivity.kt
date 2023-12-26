@@ -71,6 +71,7 @@ import androidx.compose.material3.TopAppBarDefaults.windowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -324,28 +325,47 @@ class MainActivity : AppCompatActivity() {
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
-//    private fun exec(s: String): String {
+    //    private fun exec(s: String): String {
 //
 //    }
-    private fun uninstall(Appinfo:AppInfo){
-        val t = ShizukuExec("pm uninstall --user 0 ${Appinfo.appPkg}".toByteArray())
-        // 在协程中调用挂起函数
+    private fun uninstall(Appinfo: AppInfo, a:MutableState<Boolean>) {
+
         MaterialAlertDialogBuilder(context)
-            .setTitle("结果")
-            .setMessage(t+"\n"+Appinfo.appPkg)
-            .setPositiveButton("ok") { _, _ -> }
+            .setTitle("尝试卸载")
+            .setMessage("您将卸载 ${Appinfo.appName}(${Appinfo.appPkg})")
+            .setPositiveButton("确定") { _, _ ->
+                val t = ShizukuExec("pm uninstall --user 0 ${Appinfo.appPkg}".toByteArray())
+                MaterialAlertDialogBuilder(context)
+                    .setTitle("结果")
+                    .setMessage(t + "\n" + Appinfo.appPkg)
+                    .setPositiveButton("ok") { _, _ ->a.value=!a.value }
+                    .show()
+            }
+            .setNegativeButton("取消") { _, _ -> }
             .show()
     }
-    private fun reinstall(Appinfo:AppInfo){
-        Toast.makeText(context,"请稍等...",Toast.LENGTH_LONG).show()
-        val t = ShizukuExec("pm install-existing ${Appinfo.appPkg}".toByteArray())
-        // 在协程中调用挂起函数
+
+    private fun reinstall(Appinfo: AppInfo,a:MutableState<Boolean>) {
         MaterialAlertDialogBuilder(context)
-            .setTitle("结果")
-            .setMessage(t+"\n"+Appinfo.appPkg)
-            .setPositiveButton("ok") { _, _ -> }
+            .setTitle("尝试重装")
+            .setMessage("您将尝试重装 ${Appinfo.appPkg} ,此操作仅系统自带核心app有效")
+            .setPositiveButton("确定") { _, _ ->
+                Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
+                val t = ShizukuExec("pm install-existing ${Appinfo.appPkg}".toByteArray())
+                MaterialAlertDialogBuilder(context)
+                    .setTitle("结果")
+                    .setMessage(t + "\n" + Appinfo.appPkg)
+                    .setPositiveButton("ok") { _, _ ->
+                        //重载页面
+                        a.value=!a.value
+                    }
+                    .show()
+            }
+            .setNegativeButton("取消") { _, _ -> }
             .show()
+
     }
+
     private fun ShizukuExec(cmd: ByteArray): String? {
         if (br) {
             return "正在执行其他操作"
@@ -556,42 +576,34 @@ class MainActivity : AppCompatActivity() {
         return false
     }
 
-    @Preview(showBackground = true)
-    @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
-    @Composable
-    fun GreetingPreview() {
-        OriginPlanTheme {
-            // A surface container using the 'background' color from the theme
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
-            ) {
-                val appList = listOf(
-                    AppInfo("App1", "com.example.app1", true),
-                    AppInfo("App2", "com.example.app2", true),
-                    // Add more items as needed
-                )
-                AppList(appList)
-            }
-        }
-    }
+
 
 
     @Composable
     fun AppListItem(appInfo: AppInfo) {
         //让 compose监听这个的变化
-        var isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
+        val isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
+        val refreshing=remember { mutableStateOf(false) }
         var isMenuVisible by remember { mutableStateOf(false) }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                ,
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            var o=1
+            if(refreshing.value||!refreshing.value) o=2
+            if (isInstalled(appInfo.appPkg)) {
+                appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
+                appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
+            } else {
+                appInfo.isExist = false
+                appInfo.appName = "未安装"
+            }
             val appIcon = getAppIconByPackageName(appInfo.appPkg)
-
             if (appIcon != null) {
                 Image(
                     painter = rememberDrawablePainter(appIcon),
@@ -643,7 +655,7 @@ class MainActivity : AppCompatActivity() {
 
                 Icon(
                     imageVector = Icons.Default.MoreVert,
-                    contentDescription = "more"
+                    contentDescription = refreshing.value.toString()
                 )
                 DropdownMenu(
                     expanded = isMenuVisible,
@@ -657,9 +669,9 @@ class MainActivity : AppCompatActivity() {
                                 contentDescription = "uninstall"
                             )
                         },
-                        text = { Text(text = "尝试卸载") }, onClick = {uninstall(appInfo)}
-                            // 处理菜单项点击事件，这里可以添加卸载逻辑
-                           )
+                        text = { Text(text = "尝试卸载") }, onClick = { isMenuVisible=false;uninstall(appInfo,refreshing) }
+                        // 处理菜单项点击事件，这里可以添加卸载逻辑
+                    )
                     DropdownMenuItem(
                         leadingIcon = {
                             Icon(
@@ -667,11 +679,9 @@ class MainActivity : AppCompatActivity() {
                                 contentDescription = "uninstall"
                             )
                         }, text = { Text(text = "尝试重装") }, onClick = {
-                            // 处理菜单项点击事件，这里可以添加重装逻辑
                             // ...
-
-                            // 关闭菜单
-                            isMenuVisible = false
+                            isMenuVisible=false
+                            reinstall(appInfo,refreshing)
                         })
                 }
             }
@@ -1074,17 +1084,21 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Details() {
-        val appList = remember { generateAppList(context) }
+
         Column {
+            val recompose = currentRecomposeScope
+            //val appList = remember { generateAppList(context) }
             // TopAppBar
-            TopAppBar(
-
-                title = { Text(text = "原·初") },
-
-                )
-
+            TopAppBar(title = { Text(text = "原·初") },actions={
+                IconButton(onClick = { recompose.invalidate() }) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "refresh"
+                    )
+                }
+            })
             // AppList
-            AppList(appList = appList)
+            AppList(appList = pkglist)
         }
     }
 
@@ -1383,7 +1397,32 @@ class MainActivity : AppCompatActivity() {
         OLog.i("列表项", pkglist.toString())
         return pkglist
     }
-
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Preview(showBackground = true)
+    @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
+    @Composable
+    fun GreetingPreview() {
+        OriginPlanTheme {
+            // A surface container using the 'background' color from the theme
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                Column {
+                    val recompose = currentRecomposeScope
+                    // TopAppBar
+                    TopAppBar(title = { Text(text = "原·初") },actions={
+                        IconButton(onClick = { recompose.invalidate() }) {
+                            Icon(
+                                imageVector = Icons.Default.Refresh,
+                                contentDescription = "refresh"
+                            )
+                        }
+                    })
+                }
+            }
+        }
+    }
 }
 
 
