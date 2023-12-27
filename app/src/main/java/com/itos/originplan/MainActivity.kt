@@ -9,6 +9,7 @@ import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.util.Linkify
 import android.widget.ImageView
@@ -132,7 +133,6 @@ class MainActivity : AppCompatActivity() {
     private val context: Context = this
     var ReturnValue = 0
     var br = false
-    var h1: Thread? = null
     var h2: Thread? = null
     var h3: Thread? = null
     var b = true
@@ -325,19 +325,26 @@ class MainActivity : AppCompatActivity() {
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
-    //    private fun exec(s: String): String {
-//
-//    }
-    private fun uninstall(Appinfo: AppInfo, a:MutableState<Boolean>) {
+    private fun uninstall(appInfo: AppInfo, a:MutableState<Boolean>) {
 
         MaterialAlertDialogBuilder(context)
             .setTitle("尝试卸载")
-            .setMessage("您将卸载 ${Appinfo.appName}(${Appinfo.appPkg})")
+            .setMessage("您将卸载 ${appInfo.appName}(${appInfo.appPkg})")
             .setPositiveButton("确定") { _, _ ->
-                val t = ShizukuExec("pm uninstall --user 0 ${Appinfo.appPkg}".toByteArray())
+                val t:String? = when (Build.VERSION.SDK_INT) {
+                    Build.VERSION_CODES.TIRAMISU -> {
+                        ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
+                    }
+                    Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
+                        ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
+                    }
+                    else -> {
+                        ShizukuExec("pm uninstall --user 0 ${appInfo.appPkg}".toByteArray())
+                    }
+                }
                 MaterialAlertDialogBuilder(context)
                     .setTitle("结果")
-                    .setMessage(t + "\n" + Appinfo.appPkg)
+                    .setMessage(t)
                     .setPositiveButton("ok") { _, _ ->a.value=!a.value }
                     .show()
             }
@@ -345,16 +352,26 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun reinstall(Appinfo: AppInfo,a:MutableState<Boolean>) {
+    private fun reinstall(appInfo: AppInfo, a:MutableState<Boolean>) {
         MaterialAlertDialogBuilder(context)
             .setTitle("尝试重装")
-            .setMessage("您将尝试重装 ${Appinfo.appPkg} ,此操作仅系统自带核心app有效")
+            .setMessage("您将尝试重装 ${appInfo.appPkg} ,此操作仅系统自带核心app可用")
             .setPositiveButton("确定") { _, _ ->
                 Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
-                val t = ShizukuExec("pm install-existing ${Appinfo.appPkg}".toByteArray())
+                val t:String? = when (Build.VERSION.SDK_INT) {
+                    Build.VERSION_CODES.TIRAMISU -> {
+                        ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
+                    }
+                    Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
+                        ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
+                    }
+                    else -> {
+                        ShizukuExec("pm install-existing ${appInfo.appPkg}".toByteArray())
+                    }
+                }
                 MaterialAlertDialogBuilder(context)
                     .setTitle("结果")
-                    .setMessage(t + "\n" + Appinfo.appPkg)
+                    .setMessage(t )
                     .setPositiveButton("ok") { _, _ ->
                         //重载页面
                         a.value=!a.value
@@ -365,7 +382,30 @@ class MainActivity : AppCompatActivity() {
             .show()
 
     }
-
+    private fun patchProcessLimit() {
+        Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
+        ShizukuExec("device_config set_sync_disabled_for_tests persistent;device_config put activity_manager max_cached_processes 2147483647;device_config put activity_manager max_phantom_processes 2147483647".toByteArray())
+        MaterialAlertDialogBuilder(context)
+            .setTitle("关闭缓存进程和虚进程数量限制")
+            .setMessage("调整完成，是否立即重启")
+            .setPositiveButton("立即重启") { _, _ ->
+                ShizukuExec("reboot".toByteArray())
+            }
+            .setNegativeButton("暂不重启"){_,_-> }
+            .show()
+    }
+    private fun unpatchProcessLimit() {
+        Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
+        ShizukuExec("device_config set_sync_disabled_for_tests none".toByteArray())
+        MaterialAlertDialogBuilder(context)
+            .setTitle("还原缓存进程和虚进程数量限制")
+            .setMessage("还原完成，是否立即重启")
+            .setPositiveButton("立即重启") { _, _ ->
+                ShizukuExec("reboot".toByteArray())
+            }
+            .setNegativeButton("暂不重启"){_,_-> }
+            .show()
+    }
     private fun ShizukuExec(cmd: ByteArray): String? {
         if (br) {
             return "正在执行其他操作"
@@ -1019,7 +1059,7 @@ class MainActivity : AppCompatActivity() {
                             .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
                         onClick = {
-                            Toast.makeText(context, "开发中...", Toast.LENGTH_SHORT).show()
+                            patchProcessLimit()
                         }
                     ) {
                         Text("调整Android进程设置", textAlign = TextAlign.Center)
@@ -1030,10 +1070,10 @@ class MainActivity : AppCompatActivity() {
                             .size(width = 130.dp, height = 60.dp),
                         shape = RoundedCornerShape(30),
                         onClick = {
-                            Toast.makeText(context, "开发中...", Toast.LENGTH_SHORT).show()
+                            unpatchProcessLimit()
                         }
                     ) {
-                        Text("还原\n进程设置", textAlign = TextAlign.Center)
+                        Text("还原\nAndroid进程设置", textAlign = TextAlign.Center)
                     }
                 }
             }
