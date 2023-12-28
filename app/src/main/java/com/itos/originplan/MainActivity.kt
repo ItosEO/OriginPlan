@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Info
@@ -288,7 +289,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    fun moreapp(){
+        MaterialAlertDialogBuilder(context)
+            .setTitle("更多软件")
+            .setMessage(resources.openRawResource(R.raw.moreapp).bufferedReader().readText())
+            .setPositiveButton("了解", null)
+            .show()
+            .findViewById<MaterialTextView>(android.R.id.message)?.apply {
+                setTextIsSelectable(true)
+                Linkify.addLinks(this, Linkify.EMAIL_ADDRESSES or Linkify.WEB_URLS)
+                // The first time the link is clicked the background does not change color and
+                // the view needs to get focus once.
+                requestFocus()
+            }
 
+    }
     private fun checkShizuku() {
 //        var b = true
 //        var c = false
@@ -977,7 +992,13 @@ class MainActivity : AppCompatActivity() {
                     join_qq()
                 }
             ),
-
+            OriginCardItem(
+                icon = Icons.Default.Share,
+                label = "更多软件",
+                onClick = {
+                    join_qq()
+                }
+            ),
             )
         ItemsCardWidget(
             title = {
@@ -1456,18 +1477,7 @@ class MainActivity : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                Column {
-                    val recompose = currentRecomposeScope
-                    // TopAppBar
-                    TopAppBar(title = { Text(text = "原·初") }, actions = {
-                        IconButton(onClick = { recompose.invalidate() }) {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "refresh"
-                            )
-                        }
-                    })
-                }
+                About()
             }
         }
     }
