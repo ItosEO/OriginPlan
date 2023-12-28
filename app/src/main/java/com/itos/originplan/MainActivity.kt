@@ -214,7 +214,7 @@ class MainActivity : AppCompatActivity() {
         checkShizuku()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
-
+//        generateAppList(context)
         update_notice()
 
 //        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
@@ -223,11 +223,10 @@ class MainActivity : AppCompatActivity() {
     private fun opt_setappstauts(status: Boolean) {
         // 遍历app list
         for (appInfo in optlist) {
-            if (appInfo.isExist) SetAppDisabled(
-                mutableStateOf(status),
-                appInfo.appPkg,
-                appInfo.isExist
-            )
+            if (appInfo.isExist) {
+                SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist)
+                appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
+            }
         }
         if (!status) {
             MaterialAlertDialogBuilder(context)
@@ -325,19 +324,21 @@ class MainActivity : AppCompatActivity() {
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
-    private fun uninstall(appInfo: AppInfo, a:MutableState<Boolean>) {
+    private fun uninstall(appInfo: AppInfo, a: MutableState<Boolean>) {
 
         MaterialAlertDialogBuilder(context)
             .setTitle("尝试卸载")
             .setMessage("您将卸载 ${appInfo.appName}(${appInfo.appPkg})")
             .setPositiveButton("确定") { _, _ ->
-                val t:String? = when (Build.VERSION.SDK_INT) {
+                val t: String? = when (Build.VERSION.SDK_INT) {
                     Build.VERSION_CODES.TIRAMISU -> {
                         ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
                     }
+
                     Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
                         ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
                     }
+
                     else -> {
                         ShizukuExec("pm uninstall --user 0 ${appInfo.appPkg}".toByteArray())
                     }
@@ -345,36 +346,38 @@ class MainActivity : AppCompatActivity() {
                 MaterialAlertDialogBuilder(context)
                     .setTitle("结果")
                     .setMessage(t)
-                    .setPositiveButton("ok") { _, _ ->a.value=!a.value }
+                    .setPositiveButton("ok") { _, _ -> a.value = !a.value }
                     .show()
             }
             .setNegativeButton("取消") { _, _ -> }
             .show()
     }
 
-    private fun reinstall(appInfo: AppInfo, a:MutableState<Boolean>) {
+    private fun reinstall(appInfo: AppInfo, a: MutableState<Boolean>) {
         MaterialAlertDialogBuilder(context)
             .setTitle("尝试重装")
             .setMessage("您将尝试重装 ${appInfo.appPkg} ,此操作仅系统自带核心app可用")
             .setPositiveButton("确定") { _, _ ->
                 Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
-                val t:String? = when (Build.VERSION.SDK_INT) {
+                val t: String? = when (Build.VERSION.SDK_INT) {
                     Build.VERSION_CODES.TIRAMISU -> {
                         ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
                     }
+
                     Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
                         ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
                     }
+
                     else -> {
                         ShizukuExec("pm install-existing ${appInfo.appPkg}".toByteArray())
                     }
                 }
                 MaterialAlertDialogBuilder(context)
                     .setTitle("结果")
-                    .setMessage(t )
+                    .setMessage(t)
                     .setPositiveButton("ok") { _, _ ->
                         //重载页面
-                        a.value=!a.value
+                        a.value = !a.value
                     }
                     .show()
             }
@@ -382,6 +385,7 @@ class MainActivity : AppCompatActivity() {
             .show()
 
     }
+
     private fun patchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
         ShizukuExec("device_config set_sync_disabled_for_tests persistent;device_config put activity_manager max_cached_processes 2147483647;device_config put activity_manager max_phantom_processes 2147483647".toByteArray())
@@ -391,9 +395,10 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("立即重启") { _, _ ->
                 ShizukuExec("reboot".toByteArray())
             }
-            .setNegativeButton("暂不重启"){_,_-> }
+            .setNegativeButton("暂不重启") { _, _ -> }
             .show()
     }
+
     private fun unpatchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
         ShizukuExec("device_config set_sync_disabled_for_tests none".toByteArray())
@@ -403,9 +408,10 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton("立即重启") { _, _ ->
                 ShizukuExec("reboot".toByteArray())
             }
-            .setNegativeButton("暂不重启"){_,_-> }
+            .setNegativeButton("暂不重启") { _, _ -> }
             .show()
     }
+
     private fun ShizukuExec(cmd: ByteArray): String? {
         if (br) {
             return "正在执行其他操作"
@@ -511,17 +517,20 @@ class MainActivity : AppCompatActivity() {
         isDisabled: MutableState<Boolean>,
         packagename: String,
         isExist: Boolean
-    ) {
+    ): Boolean? {
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
             val c = isAppDisabled(packagename)
             if (c != isDisabled.value) {
                 isDisabled.value = c
+                return true
             } else {
                 Toast.makeText(this, "设置失败", Toast.LENGTH_SHORT).show()
+                return false
             }
         } else {
             Toast.makeText(this, "应用未安装", Toast.LENGTH_SHORT).show()
+            return null
         }
     }
 
@@ -617,25 +626,22 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-
     @Composable
     fun AppListItem(appInfo: AppInfo) {
         //让 compose监听这个的变化
         val isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
-        val refreshing=remember { mutableStateOf(false) }
+        val refreshing = remember { mutableStateOf(false) }
         var isMenuVisible by remember { mutableStateOf(false) }
 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-                ,
+                .padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            var o=1
-            if(refreshing.value||!refreshing.value) o=2
+            var o = 1
+            if (refreshing.value || !refreshing.value) o = 2
             if (isInstalled(appInfo.appPkg)) {
                 appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
                 appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
@@ -709,7 +715,8 @@ class MainActivity : AppCompatActivity() {
                                 contentDescription = "uninstall"
                             )
                         },
-                        text = { Text(text = "尝试卸载") }, onClick = { isMenuVisible=false;uninstall(appInfo,refreshing) }
+                        text = { Text(text = "尝试卸载") },
+                        onClick = { isMenuVisible = false;uninstall(appInfo, refreshing) }
                         // 处理菜单项点击事件，这里可以添加卸载逻辑
                     )
                     DropdownMenuItem(
@@ -720,8 +727,8 @@ class MainActivity : AppCompatActivity() {
                             )
                         }, text = { Text(text = "尝试重装") }, onClick = {
                             // ...
-                            isMenuVisible=false
-                            reinstall(appInfo,refreshing)
+                            isMenuVisible = false
+                            reinstall(appInfo, refreshing)
                         })
                 }
             }
@@ -1015,6 +1022,7 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Opt() {
+        generateAppList(context)
         Scaffold(topBar = {
             TopAppBar(
                 title = {
@@ -1073,14 +1081,12 @@ class MainActivity : AppCompatActivity() {
                             unpatchProcessLimit()
                         }
                     ) {
-                        Text("还原\nAndroid进程设置", textAlign = TextAlign.Center)
+                        Text("还原\n进程设置", textAlign = TextAlign.Center)
                     }
                 }
             }
 
         }
-
-
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -1124,18 +1130,19 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Details() {
+        generateAppList(context)
 
         Column {
             val recompose = currentRecomposeScope
             //val appList = remember { generateAppList(context) }
             // TopAppBar
-            TopAppBar(title = { Text(text = "原·初") },actions={
-                IconButton(onClick = { recompose.invalidate() }) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "refresh"
-                    )
-                }
+            TopAppBar(title = { Text(text = "原·初") }, actions = {
+//                IconButton(onClick = { recompose.invalidate() }) {
+//                    Icon(
+//                        imageVector = Icons.Default.Refresh,
+//                        contentDescription = "refresh"
+//                    )
+//                }
             })
             // AppList
             AppList(appList = pkglist)
@@ -1437,6 +1444,7 @@ class MainActivity : AppCompatActivity() {
         OLog.i("列表项", pkglist.toString())
         return pkglist
     }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Preview(showBackground = true)
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -1451,7 +1459,7 @@ class MainActivity : AppCompatActivity() {
                 Column {
                     val recompose = currentRecomposeScope
                     // TopAppBar
-                    TopAppBar(title = { Text(text = "原·初") },actions={
+                    TopAppBar(title = { Text(text = "原·初") }, actions = {
                         IconButton(onClick = { recompose.invalidate() }) {
                             Icon(
                                 imageVector = Icons.Default.Refresh,

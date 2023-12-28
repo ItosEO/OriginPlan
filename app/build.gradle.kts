@@ -6,19 +6,25 @@ plugins {
 android {
     namespace = "com.itos.originplan"
     compileSdk = 34
+    applicationVariants.all {
+        outputs.all {
+            val ver = defaultConfig.versionName+"(${defaultConfig.versionCode})"
 
+            (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
+                "OriginPlan_$ver.apk";
+        }
+    }
     defaultConfig {
         applicationId = "com.itos.originplan"
         minSdk = 29
         targetSdk = 34
-        versionCode = 10
-        versionName = "Alpha-1.1"
+        versionCode = 11
+        versionName = "Alpha-1.2"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
-    }
 
     buildTypes {
         release {
@@ -49,6 +55,8 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+}
 }
 
 dependencies {
