@@ -222,6 +222,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun opt_setappstauts(status: Boolean) {
+        generateAppList(context)
         // 遍历app list
         for (appInfo in optlist) {
             if (appInfo.isExist) {
@@ -1043,7 +1044,7 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Opt() {
-        generateAppList(context)
+//        generateAppList(context)
         Scaffold(topBar = {
             TopAppBar(
                 title = {
