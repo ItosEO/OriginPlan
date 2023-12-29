@@ -113,21 +113,9 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStream
+import com.itos.originplan.datatype.AppInfo
+import com.itos.originplan.datatype.OriginCardItem
 
-
-data class AppInfo(
-    var appName: String,
-    val appPkg: String,
-    var isDisabled: Boolean = false,
-    var isExist: Boolean = true
-)
-
-data class OriginCardItem(
-    val icon: ImageVector? = null,
-    val label: String,
-    val content: String? = null,
-    val onClick: (() -> Unit)? = null
-)
 
 // TODO 拆分About页面
 class MainActivity : AppCompatActivity() {
@@ -140,23 +128,6 @@ class MainActivity : AppCompatActivity() {
     var c = false
     private val pkglist = mutableListOf<AppInfo>()
     private val optlist = mutableListOf<AppInfo>()
-    //var userService: IUserService? = null
-
-//    val userServiceArgs = UserServiceArgs(
-//        ComponentName(
-//            BuildConfig.APPLICATION_ID,
-//            UserService::class.java.name
-//        )
-//    ).processNameSuffix("service")
-//    val userServiceConnection: ServiceConnection = object : ServiceConnection {
-//        override fun onServiceConnected(name: ComponentName, service: IBinder) {
-//            if (service.pingBinder()) {
-//                userService = IUserService.Stub.asInterface(service)
-//            }
-//        }
-//
-//        override fun onServiceDisconnected(name: ComponentName) {}
-//    }
 
     private val requestPermissionResultListener =
         Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
@@ -217,8 +188,6 @@ class MainActivity : AppCompatActivity() {
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
 //        generateAppList(context)
         update_notice()
-
-//        Shizuku.bindUserService(userServiceArgs, userServiceConnection)
     }
 
     private fun opt_setappstauts(status: Boolean) {
