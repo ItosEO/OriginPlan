@@ -11,7 +11,7 @@ android {
             val ver = defaultConfig.versionName+"(${defaultConfig.versionCode})"
 
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "OriginPlan_$ver.apk";
+                "OriginPlan_$ver.apk"
         }
     }
     defaultConfig {
