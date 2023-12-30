@@ -496,6 +496,21 @@ class MainActivity : AppCompatActivity() {
         builder.show() // 显示对话框
     }
 
+    private fun showLicenses() {
+        // val customContext = ContextThemeWrapper(context, R.style.Theme_MDialog)
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.action_licenses)
+            .setMessage(resources.openRawResource(R.raw.licenses).bufferedReader().readText())
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+            .findViewById<MaterialTextView>(android.R.id.message)?.apply {
+                setTextIsSelectable(true)
+                Linkify.addLinks(this, Linkify.EMAIL_ADDRESSES or Linkify.WEB_URLS)
+                // The first time the link is clicked the background does not change color and
+                // the view needs to get focus once.
+                requestFocus()
+            }
+    }
 
     private fun show_author() {
         try {
@@ -757,21 +772,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun showLicenses() {
-        // val customContext = ContextThemeWrapper(context, R.style.Theme_MDialog)
-        MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.action_licenses)
-            .setMessage(resources.openRawResource(R.raw.licenses).bufferedReader().readText())
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
-            .findViewById<MaterialTextView>(android.R.id.message)?.apply {
-                setTextIsSelectable(true)
-                Linkify.addLinks(this, Linkify.EMAIL_ADDRESSES or Linkify.WEB_URLS)
-                // The first time the link is clicked the background does not change color and
-                // the view needs to get focus once.
-                requestFocus()
-            }
-    }
 
     @Composable
     fun ItemsCardWidget(
@@ -882,7 +882,7 @@ class MainActivity : AppCompatActivity() {
 
         val onContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-        val level = "Release"
+        val level = R.string.build_type
 
         CardWidget(
             colors = CardDefaults.elevatedCardColors(
@@ -896,7 +896,7 @@ class MainActivity : AppCompatActivity() {
                     painter = rememberDrawablePainter(
                         drawable = ContextCompat.getDrawable(
                             LocalContext.current,
-                            R.mipmap.ic_launcher
+                            R.mipmap.ic_launcher_xplan
                         )
                     ),
                     contentDescription = stringResource(id = R.string.app_name)
