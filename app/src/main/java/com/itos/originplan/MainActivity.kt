@@ -73,6 +73,7 @@ import androidx.compose.material3.TopAppBarDefaults.windowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.currentRecomposeScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -99,6 +100,8 @@ import com.alibaba.fastjson.JSONObject
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
+import com.itos.originplan.datatype.AppInfo
+import com.itos.originplan.datatype.OriginCardItem
 import com.itos.originplan.ui.theme.OriginPlanTheme
 import com.itos.originplan.utils.NetUtils
 import com.itos.originplan.utils.OLog
@@ -113,8 +116,6 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStream
-import com.itos.originplan.datatype.AppInfo
-import com.itos.originplan.datatype.OriginCardItem
 
 
 // TODO 拆分About页面
@@ -186,7 +187,7 @@ class MainActivity : AppCompatActivity() {
         checkShizuku()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
-//        generateAppList(context)
+        generateAppList(context)
         update_notice()
     }
 
@@ -212,6 +213,7 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton(android.R.string.ok, null)
                 .show()
         }
+        generateAppList(context)
     }
 
     fun update_notice() {
@@ -259,7 +261,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-    fun moreapp(){
+
+    fun moreapp() {
         MaterialAlertDialogBuilder(context)
             .setTitle("更多软件")
             .setMessage(resources.openRawResource(R.raw.moreapp).bufferedReader().readText())
@@ -274,6 +277,7 @@ class MainActivity : AppCompatActivity() {
             }
 
     }
+
     private fun checkShizuku() {
 //        var b = true
 //        var c = false
@@ -309,7 +313,7 @@ class MainActivity : AppCompatActivity() {
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
-    private fun uninstall(appInfo: AppInfo, a: MutableState<Boolean>) {
+    private fun uninstall(appInfo: AppInfo, a: RecomposeScope) {
 
         MaterialAlertDialogBuilder(context)
             .setTitle("尝试卸载")
@@ -331,14 +335,19 @@ class MainActivity : AppCompatActivity() {
                 MaterialAlertDialogBuilder(context)
                     .setTitle("结果")
                     .setMessage(t)
-                    .setPositiveButton("ok") { _, _ -> a.value = !a.value }
+                    .setPositiveButton("ok") { _, _ ->
+                        appInfo.isExist = isInstalled(appInfo.appPkg)
+                        appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
+                        appInfo.appIcon=getAppIconByPackageName(appInfo.appPkg)
+                        a.invalidate()
+                    }
                     .show()
             }
             .setNegativeButton("取消") { _, _ -> }
             .show()
     }
 
-    private fun reinstall(appInfo: AppInfo, a: MutableState<Boolean>) {
+    private fun reinstall(appInfo: AppInfo, a: RecomposeScope) {
         MaterialAlertDialogBuilder(context)
             .setTitle("尝试重装")
             .setMessage("您将尝试重装 ${appInfo.appPkg} ,此操作仅系统自带核心app可用")
@@ -362,7 +371,11 @@ class MainActivity : AppCompatActivity() {
                     .setMessage(t)
                     .setPositiveButton("ok") { _, _ ->
                         //重载页面
-                        a.value = !a.value
+                        appInfo.isExist = isInstalled(appInfo.appPkg)
+                        appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
+                        appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
+                        appInfo.appIcon=getAppIconByPackageName(appInfo.appPkg)
+                        a.invalidate()
                     }
                     .show()
             }
@@ -548,7 +561,7 @@ class MainActivity : AppCompatActivity() {
 
         return applicationInfo?.let {
             packageManager.getApplicationLabel(it).toString()
-        } ?: "Unknown App"
+        } ?: "未安装"
     }
 
     private fun openLink(url: String) {
@@ -615,8 +628,9 @@ class MainActivity : AppCompatActivity() {
     fun AppListItem(appInfo: AppInfo) {
         //让 compose监听这个的变化
         val isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
-        val refreshing = remember { mutableStateOf(false) }
+//        val refreshing = remember { mutableStateOf(false) }
         var isMenuVisible by remember { mutableStateOf(false) }
+        val recompose = currentRecomposeScope
 
         Row(
             modifier = Modifier
@@ -625,19 +639,18 @@ class MainActivity : AppCompatActivity() {
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            var o = 1
-            if (refreshing.value || !refreshing.value) o = 2
-            if (isInstalled(appInfo.appPkg)) {
-                appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
-                appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
-            } else {
-                appInfo.isExist = false
-                appInfo.appName = "未安装"
-            }
-            val appIcon = getAppIconByPackageName(appInfo.appPkg)
-            if (appIcon != null) {
+            OLog.i("重绘", "触发重绘")
+//            if (isInstalled(appInfo.appPkg)) {
+//                appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
+//                appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
+//            } else {
+//                appInfo.isExist = false
+//                appInfo.appName = "未安装"
+//            }
+//            val appIcon = getAppIconByPackageName(appInfo.appPkg)
+            if (appInfo.appIcon != null) {
                 Image(
-                    painter = rememberDrawablePainter(appIcon),
+                    painter = rememberDrawablePainter(appInfo.appIcon),
                     modifier = Modifier
                         .size(40.dp)
                         .align(Alignment.CenterVertically),
@@ -667,6 +680,7 @@ class MainActivity : AppCompatActivity() {
             IconButton(
                 onClick = { SetAppDisabled(isDisabled, appInfo.appPkg, appInfo.isExist) }
             ) {
+
                 val icon: ImageVector = if (appInfo.isExist && isDisabled.value) {
                     Icons.Default.Check
                 } else if (appInfo.isExist) {
@@ -686,7 +700,7 @@ class MainActivity : AppCompatActivity() {
 
                 Icon(
                     imageVector = Icons.Default.MoreVert,
-                    contentDescription = refreshing.value.toString()
+                    contentDescription = "More"
                 )
                 DropdownMenu(
                     expanded = isMenuVisible,
@@ -701,7 +715,12 @@ class MainActivity : AppCompatActivity() {
                             )
                         },
                         text = { Text(text = "尝试卸载") },
-                        onClick = { isMenuVisible = false;uninstall(appInfo, refreshing) }
+                        onClick = {
+                            isMenuVisible = false;uninstall(
+                            appInfo,
+                            recompose
+                        )
+                        }
                         // 处理菜单项点击事件，这里可以添加卸载逻辑
                     )
                     DropdownMenuItem(
@@ -713,7 +732,7 @@ class MainActivity : AppCompatActivity() {
                         }, text = { Text(text = "尝试重装") }, onClick = {
                             // ...
                             isMenuVisible = false
-                            reinstall(appInfo, refreshing)
+                            reinstall(appInfo, recompose)
                         })
                 }
             }
@@ -966,10 +985,10 @@ class MainActivity : AppCompatActivity() {
                 icon = Icons.Default.Share,
                 label = "更多软件",
                 onClick = {
-                    join_qq()
+                    moreapp()
                 }
             ),
-            )
+        )
         ItemsCardWidget(
             title = {
                 Text(text = "讨论&反馈&联系我们")
@@ -1363,13 +1382,30 @@ class MainActivity : AppCompatActivity() {
             }
 
         ) {
-            if (isLandscapeScreen) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(start = 72.dp)
-                ) {
-                    // 在这里放置你的内容
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = it.calculateBottomPadding()) // 添加 padding,防止遮挡内容
+            ) {
+                if (isLandscapeScreen) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = 72.dp)
+                    ) {
+                        // 在这里放置你的内容
+                        NavHost(
+                            navController = navController,
+                            startDestination = "2"
+                        ) {
+                            composable("2") { Details() }
+                            composable("3") { About() }
+                            composable("1") { Opt() }
+                            // 添加其他页面的 composable 函数，类似上面的示例
+                        }
+                    }
+                } else {
+
                     NavHost(
                         navController = navController,
                         startDestination = "2"
@@ -1379,17 +1415,6 @@ class MainActivity : AppCompatActivity() {
                         composable("1") { Opt() }
                         // 添加其他页面的 composable 函数，类似上面的示例
                     }
-                }
-            } else {
-
-                NavHost(
-                    navController = navController,
-                    startDestination = "2"
-                ) {
-                    composable("2") { Details() }
-                    composable("3") { About() }
-                    composable("1") { Opt() }
-                    // 添加其他页面的 composable 函数，类似上面的示例
                 }
             }
         }
@@ -1414,6 +1439,7 @@ class MainActivity : AppCompatActivity() {
                 appinfo.isExist = false
                 appinfo.appName = "未安装"
             }
+            appinfo.appIcon= getAppIconByPackageName(appinfo.appPkg)
         }
         for (appinfo in optlist) {
             if (isInstalled(appinfo.appPkg)) {
@@ -1424,6 +1450,7 @@ class MainActivity : AppCompatActivity() {
                 appinfo.isExist = false
                 appinfo.appName = "未安装"
             }
+            appinfo.appIcon= getAppIconByPackageName(appinfo.appPkg)
         }
 //        val testlist: List<AppInfo> = List(2) { index ->
 //            AppInfo(
