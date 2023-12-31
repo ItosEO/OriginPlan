@@ -3,6 +3,7 @@ package com.itos.originplan
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -42,12 +43,14 @@ import androidx.compose.material.icons.filled.Create
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
@@ -119,6 +122,7 @@ import java.io.OutputStream
 
 
 // TODO 拆分About页面
+// TODO 做选择卸载方式
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
     var ReturnValue = 0
@@ -127,6 +131,7 @@ class MainActivity : AppCompatActivity() {
     var h3: Thread? = null
     var b = true
     var c = false
+//    private var FirstTime_pf: SharedPreferences? = null
     private val pkglist = mutableListOf<AppInfo>()
     private val optlist = mutableListOf<AppInfo>()
 
@@ -184,6 +189,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
+        val FirstTime_pf=getSharedPreferences("data", 0)
+        if (!FirstTime_pf.getBoolean("if_first_time", false)) {
+            MaterialAlertDialogBuilder(context)
+                .setTitle("帮助")
+                .setMessage("您需要Shiuzku激活教程吗")
+                .setPositiveButton("好的") { dialog, which ->
+                    FirstTime_pf.edit().putBoolean("if_first_time", false).apply()
+                    openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
+                }
+                .setNegativeButton("我会") { dialog, which ->
+                    FirstTime_pf.edit().putBoolean("if_first_time", false).apply()
+                    dialog.dismiss()
+                }
+                .show()
+                .setCancelable(false)
+        }
         checkShizuku()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
@@ -196,7 +217,7 @@ class MainActivity : AppCompatActivity() {
         // 遍历app list
         for (appInfo in optlist) {
             if (appInfo.isExist) {
-                SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist)
+                SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist,false)
                 appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
             }
         }
@@ -529,7 +550,8 @@ class MainActivity : AppCompatActivity() {
     private fun SetAppDisabled(
         isDisabled: MutableState<Boolean>,
         packagename: String,
-        isExist: Boolean
+        isExist: Boolean,
+        isShowToast: Boolean=true
     ): Boolean? {
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
@@ -538,7 +560,9 @@ class MainActivity : AppCompatActivity() {
                 isDisabled.value = c
                 return true
             } else {
-                Toast.makeText(this, "设置失败", Toast.LENGTH_SHORT).show()
+                if (isShowToast) {
+                    Toast.makeText(this, "设置失败", Toast.LENGTH_SHORT).show()
+                }
                 return false
             }
         } else {
@@ -1052,6 +1076,27 @@ class MainActivity : AppCompatActivity() {
                 title = {
                     Text(text = "优化")
                 },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            MaterialAlertDialogBuilder(context)
+                                .setTitle("帮助")
+                                .setMessage("您需要Shiuzku激活教程吗")
+                                .setPositiveButton("好的") { dialog, which ->
+                                    openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
+                                }
+                                .setNegativeButton("我会") { dialog, which ->
+                                    dialog.dismiss()
+                                }
+                                .show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = "help"
+                        )
+                    }
+                }
             )
         }) {
             Column(
@@ -1409,7 +1454,7 @@ class MainActivity : AppCompatActivity() {
                         // 在这里放置你的内容
                         NavHost(
                             navController = navController,
-                            startDestination = "2"
+                            startDestination = "1"
                         ) {
                             composable("2") { Details() }
                             composable("3") { About() }
@@ -1421,7 +1466,7 @@ class MainActivity : AppCompatActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "2"
+                        startDestination = "1"
                     ) {
                         composable("2") { Details() }
                         composable("3") { About() }
