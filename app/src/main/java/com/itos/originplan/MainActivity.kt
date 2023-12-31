@@ -48,6 +48,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
@@ -119,6 +120,7 @@ import java.io.OutputStream
 
 
 // TODO 拆分About页面
+// TODO 做选择卸载方式
 class MainActivity : AppCompatActivity() {
     private val context: Context = this
     var ReturnValue = 0
@@ -127,6 +129,9 @@ class MainActivity : AppCompatActivity() {
     var h3: Thread? = null
     var b = true
     var c = false
+    var show_notice: String = "暂无公告"
+
+    //    private var FirstTime_pf: SharedPreferences? = null
     private val pkglist = mutableListOf<AppInfo>()
     private val optlist = mutableListOf<AppInfo>()
 
@@ -184,6 +189,22 @@ class MainActivity : AppCompatActivity() {
         }
 
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
+        val FirstTime_pf = getSharedPreferences("data", 0)
+        if (FirstTime_pf.getBoolean("if_first_time", true)) {
+            MaterialAlertDialogBuilder(context)
+                .setTitle("帮助")
+                .setMessage("您需要Shiuzku激活教程吗")
+                .setPositiveButton("好的") { dialog, which ->
+                    FirstTime_pf.edit().putBoolean("if_first_time", false).apply()
+                    openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
+                }
+                .setNegativeButton("我会") { dialog, which ->
+                    FirstTime_pf.edit().putBoolean("if_first_time", false).apply()
+                    dialog.dismiss()
+                }
+                .show()
+                .setCancelable(false)
+        }
         checkShizuku()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
@@ -196,7 +217,7 @@ class MainActivity : AppCompatActivity() {
         // 遍历app list
         for (appInfo in optlist) {
             if (appInfo.isExist) {
-                SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist)
+                SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist, false)
                 appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
             }
         }
@@ -230,6 +251,7 @@ class MainActivity : AppCompatActivity() {
                 val log = jsonObject.getString("log")
                 val isShowNotice = jsonObject.getBoolean("isShowNotice")
                 val notice = jsonObject.getString("notice")
+                show_notice=notice
                 OLog.i(
                     "更新",
                     update + "\n" + version + "\n" + url + "\n" + version_name + "\n" + log + "\n" + isShowNotice + "\n" + notice
@@ -338,7 +360,7 @@ class MainActivity : AppCompatActivity() {
                     .setPositiveButton("ok") { _, _ ->
                         appInfo.isExist = isInstalled(appInfo.appPkg)
                         appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
-                        appInfo.appIcon=getAppIconByPackageName(appInfo.appPkg)
+                        appInfo.appIcon = getAppIconByPackageName(appInfo.appPkg)
                         a.invalidate()
                     }
                     .show()
@@ -374,7 +396,7 @@ class MainActivity : AppCompatActivity() {
                         appInfo.isExist = isInstalled(appInfo.appPkg)
                         appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
                         appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
-                        appInfo.appIcon=getAppIconByPackageName(appInfo.appPkg)
+                        appInfo.appIcon = getAppIconByPackageName(appInfo.appPkg)
                         a.invalidate()
                     }
                     .show()
@@ -529,7 +551,8 @@ class MainActivity : AppCompatActivity() {
     private fun SetAppDisabled(
         isDisabled: MutableState<Boolean>,
         packagename: String,
-        isExist: Boolean
+        isExist: Boolean,
+        isShowToast: Boolean = true
     ): Boolean? {
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
@@ -538,7 +561,9 @@ class MainActivity : AppCompatActivity() {
                 isDisabled.value = c
                 return true
             } else {
-                Toast.makeText(this, "设置失败", Toast.LENGTH_SHORT).show()
+                if (isShowToast) {
+                    Toast.makeText(this, "设置失败", Toast.LENGTH_SHORT).show()
+                }
                 return false
             }
         } else {
@@ -1052,6 +1077,28 @@ class MainActivity : AppCompatActivity() {
                 title = {
                     Text(text = "优化")
                 },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            MaterialAlertDialogBuilder(context)
+                                .setTitle("公告")
+                                .setMessage(show_notice)
+                                .setPositiveButton("了解") { dialog, which ->
+//                                    openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
+                                    dialog.dismiss()
+                                }
+//                                .setNegativeButton("我会") { dialog, which ->
+//                                    dialog.dismiss()
+//                                }
+                                .show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Notifications,
+                            contentDescription = "help"
+                        )
+                    }
+                }
             )
         }) {
             Column(
@@ -1409,7 +1456,7 @@ class MainActivity : AppCompatActivity() {
                         // 在这里放置你的内容
                         NavHost(
                             navController = navController,
-                            startDestination = "2"
+                            startDestination = "1"
                         ) {
                             composable("2") { Details() }
                             composable("3") { About() }
@@ -1421,7 +1468,7 @@ class MainActivity : AppCompatActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "2"
+                        startDestination = "1"
                     ) {
                         composable("2") { Details() }
                         composable("3") { About() }
@@ -1452,7 +1499,7 @@ class MainActivity : AppCompatActivity() {
                 appinfo.isExist = false
                 appinfo.appName = "未安装"
             }
-            appinfo.appIcon= getAppIconByPackageName(appinfo.appPkg)
+            appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg)
         }
         for (appinfo in optlist) {
             if (isInstalled(appinfo.appPkg)) {
@@ -1463,7 +1510,7 @@ class MainActivity : AppCompatActivity() {
                 appinfo.isExist = false
                 appinfo.appName = "未安装"
             }
-            appinfo.appIcon= getAppIconByPackageName(appinfo.appPkg)
+            appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg)
         }
 //        val testlist: List<AppInfo> = List(2) { index ->
 //            AppInfo(
