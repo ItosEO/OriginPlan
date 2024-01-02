@@ -107,6 +107,7 @@ import com.itos.originplan.ui.theme.OriginPlanTheme
 import com.itos.originplan.utils.NetUtils
 import com.itos.originplan.utils.OLog
 import com.itos.originplan.utils.OShizuku
+import com.itos.originplan.utils.SpUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -190,6 +191,20 @@ class MainActivity : AppCompatActivity() {
 
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         val FirstTime_pf = getSharedPreferences("data", 0)
+        // 3是a13，2是a12（service call），1是pm增强，0是pm
+        when (Build.VERSION.SDK_INT) {
+            Build.VERSION_CODES.TIRAMISU -> {
+                SpUtils.setParam(context, "method", 3)
+            }
+
+            Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
+                SpUtils.setParam(context, "method", 2)
+            }
+
+            else -> {
+                SpUtils.setParam(context, "method", 1)
+            }
+        }
         if (FirstTime_pf.getBoolean("if_first_time", true)) {
             MaterialAlertDialogBuilder(context)
                 .setTitle("帮助")
@@ -213,28 +228,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun opt_setappstauts(status: Boolean) {
-        generateAppList(context)
-        // 遍历app list
-        for (appInfo in optlist) {
-            if (appInfo.isExist) {
-                SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist, false)
-                appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
+        if (b && c) {
+            generateAppList(context)
+            // 遍历app list
+            for (appInfo in optlist) {
+                if (appInfo.isExist) {
+                    SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist, false)
+                    appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
+                }
             }
-        }
-        if (!status) {
-            MaterialAlertDialogBuilder(context)
-                .setTitle("完成")
-                .setMessage("一键优化完成")
-                .setPositiveButton(android.R.string.ok, null)
-                .show()
+            if (!status) {
+                MaterialAlertDialogBuilder(context)
+                    .setTitle("完成")
+                    .setMessage("一键优化完成")
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+            } else {
+                MaterialAlertDialogBuilder(context)
+                    .setTitle("完成")
+                    .setMessage("还原完成")
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show()
+            }
+            generateAppList(context)
         } else {
-            MaterialAlertDialogBuilder(context)
-                .setTitle("完成")
-                .setMessage("还原完成")
-                .setPositiveButton(android.R.string.ok, null)
-                .show()
+            checkShizuku()
         }
-        generateAppList(context)
     }
 
     fun update_notice() {
@@ -251,7 +270,7 @@ class MainActivity : AppCompatActivity() {
                 val log = jsonObject.getString("log")
                 val isShowNotice = jsonObject.getBoolean("isShowNotice")
                 val notice = jsonObject.getString("notice")
-                show_notice=notice
+                show_notice = notice
                 OLog.i(
                     "更新",
                     update + "\n" + version + "\n" + url + "\n" + version_name + "\n" + log + "\n" + isShowNotice + "\n" + notice
@@ -341,17 +360,20 @@ class MainActivity : AppCompatActivity() {
             .setTitle("尝试卸载")
             .setMessage("您将卸载 ${appInfo.appName}(${appInfo.appPkg})")
             .setPositiveButton("确定") { _, _ ->
-                val t: String? = when (Build.VERSION.SDK_INT) {
-                    Build.VERSION_CODES.TIRAMISU -> {
+                val t: String? = when (SpUtils.getParam(context, "method", 1)) {
+                    3 -> {
                         ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
                     }
 
-                    Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
+                    2 -> {
                         ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
                     }
 
-                    else -> {
+                    1 -> {
                         ShizukuExec("pm uninstall --user 0 ${appInfo.appPkg}".toByteArray())
+                    }
+                    else -> {
+                        ShizukuExec("pm uninstall ${appInfo.appPkg}".toByteArray())
                     }
                 }
                 MaterialAlertDialogBuilder(context)
@@ -375,12 +397,12 @@ class MainActivity : AppCompatActivity() {
             .setMessage("您将尝试重装 ${appInfo.appPkg} ,此操作仅系统自带核心app可用")
             .setPositiveButton("确定") { _, _ ->
                 Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
-                val t: String? = when (Build.VERSION.SDK_INT) {
-                    Build.VERSION_CODES.TIRAMISU -> {
+                val t: String? = when (SpUtils.getParam(context, "method", 1)) {
+                    3 -> {
                         ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
                     }
 
-                    Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
+                    2 -> {
                         ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
                     }
 
@@ -394,10 +416,12 @@ class MainActivity : AppCompatActivity() {
                     .setPositiveButton("ok") { _, _ ->
                         //重载页面
                         appInfo.isExist = isInstalled(appInfo.appPkg)
-                        appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
-                        appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
-                        appInfo.appIcon = getAppIconByPackageName(appInfo.appPkg)
-                        a.invalidate()
+                        if (appInfo.isExist) {
+                            appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
+                            appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
+                            appInfo.appIcon = getAppIconByPackageName(appInfo.appPkg)
+                            a.invalidate()
+                        }
                     }
                     .show()
             }
@@ -1206,14 +1230,64 @@ class MainActivity : AppCompatActivity() {
         Column {
             //val appList = remember { generateAppList(context) }
             // TopAppBar
-            TopAppBar(title = { Text(text = "原·初") }, actions = {
-//                IconButton(onClick = { recompose.invalidate() }) {
-//                    Icon(
-//                        imageVector = Icons.Default.Refresh,
-//                        contentDescription = "refresh"
-//                    )
-//                }
-            })
+            TopAppBar(title = { Text(text = "原·初") },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            val options = arrayOf(
+                                "pm命令",
+                                "pm命令（增强）",
+                                "service call（Android 12）",
+                                "service call（Android 13）"
+                            )
+                            var selectedItem = SpUtils.getParam(context, "method", 1) as Int
+                            Toast.makeText(
+                                context,
+                                "设置卸载、重装操作的实现方案\nservice call一般可以卸载更多app",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            MaterialAlertDialogBuilder(context)
+                                .setTitle("设置方案")
+                                .setSingleChoiceItems(options, selectedItem) { _, which ->
+                                    // 设置选中状态
+                                    selectedItem = which
+                                }
+                                .setPositiveButton("确定") { _, _ ->
+                                    // 处理确定按钮点击事件，可以根据 selectedItem 执行相应逻辑
+                                    if (selectedItem != -1) {
+                                        when (selectedItem) {
+                                            0 -> {
+                                                // 选择了 "pm命令"
+                                                SpUtils.setParam(context, "method", 0)
+                                            }
+                                            1 -> {
+                                                // 选择了 "pm命令"
+                                                SpUtils.setParam(context, "method", 1)
+                                            }
+                                            2 -> {
+                                                // 选择了 "service call（Android 12）"
+                                                SpUtils.setParam(context, "method", 2)
+                                            }
+                                            3 -> {
+                                                // 选择了 "service call（Android 13）"
+                                                SpUtils.setParam(context, "method", 3)
+                                            }
+                                        }
+                                    }
+                                }
+                                .setNegativeButton("取消") { dialog, _ ->
+                                    // 处理取消按钮点击事件
+                                    dialog.dismiss()
+                                }
+                                .show()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = "settings"
+                        )
+                    }
+                })
             // AppList
             AppList(appList = pkglist)
         }
