@@ -445,7 +445,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun unpatchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
-        ShizukuExec("device_config set_sync_disabled_for_tests none".toByteArray())
+        ShizukuExec("device_config set_sync_disabled_for_tests none;device_config put activity_manager max_cached_processes 32;device_config put activity_manager max_phantom_processes 32".toByteArray())
         MaterialAlertDialogBuilder(context)
             .setTitle("还原缓存进程和虚进程数量限制")
             .setMessage("还原完成，是否立即重启")
@@ -682,7 +682,7 @@ class MainActivity : AppCompatActivity() {
             return packageInfo != null
         } catch (ep: Throwable) {
             OLog.i("应用安装判断", "$packageName 未安装")
-            OLog.e("应用安装判断报错", ep)
+//            OLog.e("应用安装判断报错", ep)
         }
         return false
     }
@@ -1125,6 +1125,7 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }) {
+            OLog.i("界面","绘制横屏Opt页面")
             Column(
                 modifier = Modifier
                     .fillMaxSize(),
@@ -1522,6 +1523,7 @@ class MainActivity : AppCompatActivity() {
                     .padding(bottom = it.calculateBottomPadding()) // 添加 padding,防止遮挡内容
             ) {
                 if (isLandscapeScreen) {
+                    OLog.i("界面","绘制横屏判断完成")
                     Row(
                         modifier = Modifier
                             .fillMaxSize()
@@ -1532,12 +1534,14 @@ class MainActivity : AppCompatActivity() {
                             navController = navController,
                             startDestination = "1"
                         ) {
+                            OLog.i("界面","绘制横屏开始")
                             composable("2") { Details() }
                             composable("3") { About() }
                             composable("1") { Opt() }
                             // 添加其他页面的 composable 函数，类似上面的示例
                         }
                     }
+
                 } else {
 
                     NavHost(
@@ -1608,7 +1612,7 @@ class MainActivity : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                About()
+                Opt()
             }
         }
     }

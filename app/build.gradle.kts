@@ -18,8 +18,8 @@ android {
         applicationId = "com.itos.originplan"
         minSdk = 29
         targetSdk = 34
-        versionCode = 18
-        versionName = "Alpha-1.8"
+        versionCode = 20
+        versionName = "Alpha-2.0"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
