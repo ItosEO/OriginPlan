@@ -576,12 +576,14 @@ class MainActivity : AppCompatActivity() {
         isDisabled: MutableState<Boolean>,
         packagename: String,
         isExist: Boolean,
-        isShowToast: Boolean = true
+        isShowToast: Boolean = true,
+        appinfolist: MutableState<AppInfo>? =null
     ): Boolean? {
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
             val c = isAppDisabled(packagename)
             if (c != isDisabled.value) {
+                if(appinfolist!=null) appinfolist.value.isDisabled=c
                 isDisabled.value = c
                 return true
             } else {
@@ -689,9 +691,11 @@ class MainActivity : AppCompatActivity() {
 
 
     @Composable
-    fun AppListItem(appInfo: AppInfo) {
+    fun AppListItem(appinfo: AppInfo) {
         //让 compose监听这个的变化
-        val isDisabled = remember { mutableStateOf(appInfo.isDisabled) }
+        var appInfo=remember{ mutableStateOf(appinfo) }
+        val isDisabled = remember { mutableStateOf(appInfo.value.isDisabled) }
+//        val appinfo_remember=remember{ mutableStateOf(appInfo) }
 //        val refreshing = remember { mutableStateOf(false) }
         var isMenuVisible by remember { mutableStateOf(false) }
         val recompose = currentRecomposeScope
@@ -712,9 +716,9 @@ class MainActivity : AppCompatActivity() {
 //                appInfo.appName = "未安装"
 //            }
 //            val appIcon = getAppIconByPackageName(appInfo.appPkg)
-            if (appInfo.appIcon != null) {
+            if (appInfo.value.appIcon != null) {
                 Image(
-                    painter = rememberDrawablePainter(appInfo.appIcon),
+                    painter = rememberDrawablePainter(appInfo.value.appIcon),
                     modifier = Modifier
                         .size(40.dp)
                         .align(Alignment.CenterVertically),
@@ -724,17 +728,17 @@ class MainActivity : AppCompatActivity() {
             // 左边显示应用名称
             Column(modifier = Modifier.weight(0.5f)) {
                 Text(
-                    text = appInfo.appName,
+                    text = appInfo.value.appName,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (!appInfo.isExist) Color(0xFFFF6E40) else LocalContentColor.current
+                    color = if (!appInfo.value.isExist) Color(0xFFFF6E40) else LocalContentColor.current
                 )
-                Text(text = appInfo.appPkg, style = MaterialTheme.typography.bodySmall)
+                Text(text = appInfo.value.appPkg, style = MaterialTheme.typography.bodySmall)
             }
 
             // 中间显示禁用状态文本
             Text(
-                text = if (!appInfo.isExist) "Unknown" else if (isDisabled.value) "Disable" else "Enable",
-                color = if (!appInfo.isExist) Color(0xFFFF6E40)
+                text = if (!appInfo.value.isExist) "Unknown" else if (isDisabled.value) "Disable" else "Enable",
+                color = if (!appInfo.value.isExist) Color(0xFFFF6E40)
                 else if (isDisabled.value) Color(0xFFFF5252)
                 else Color(0xFF59F0A6),
                 style = MaterialTheme.typography.bodyMedium,
@@ -742,12 +746,12 @@ class MainActivity : AppCompatActivity() {
             )
             // 右边是一个按钮
             IconButton(
-                onClick = { SetAppDisabled(isDisabled, appInfo.appPkg, appInfo.isExist) }
+                onClick = { SetAppDisabled(isDisabled, appInfo.value.appPkg, appInfo.value.isExist,true,appInfo) }
             ) {
 
-                val icon: ImageVector = if (appInfo.isExist && isDisabled.value) {
+                val icon: ImageVector = if (appInfo.value.isExist && isDisabled.value) {
                     Icons.Default.Check
-                } else if (appInfo.isExist) {
+                } else if (appInfo.value.isExist) {
                     Icons.Default.Close
                 } else {
                     Icons.Default.Warning
@@ -755,7 +759,7 @@ class MainActivity : AppCompatActivity() {
                 Icon(
                     imageVector = icon,
 
-                    contentDescription = if (!appInfo.isExist) "Unknown" else if (isDisabled.value) "Disable" else "Enable"
+                    contentDescription = if (!appInfo.value.isExist) "Unknown" else if (isDisabled.value) "Disable" else "Enable"
                 )
             }
             IconButton(
@@ -781,7 +785,7 @@ class MainActivity : AppCompatActivity() {
                         text = { Text(text = "尝试卸载") },
                         onClick = {
                             isMenuVisible = false;uninstall(
-                            appInfo,
+                            appInfo.value,
                             recompose
                         )
                         }
@@ -796,7 +800,7 @@ class MainActivity : AppCompatActivity() {
                         }, text = { Text(text = "尝试重装") }, onClick = {
                             // ...
                             isMenuVisible = false
-                            reinstall(appInfo, recompose)
+                            reinstall(appInfo.value, recompose)
                         })
                 }
             }
@@ -813,9 +817,7 @@ class MainActivity : AppCompatActivity() {
             modifier = Modifier.fillMaxSize()
         ) {
             items(optlist + appList) { appInfo ->
-                AppListItem(
-                    appInfo = appInfo
-                )
+                AppListItem(appInfo)
             }
         }
 
@@ -1125,17 +1127,19 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }) {
-            OLog.i("界面","绘制横屏Opt页面")
+            OLog.i("界面","绘制横屏Opt页面1")
             Column(
                 modifier = Modifier
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center // 将子项垂直居中
             ) {
+                OLog.i("界面","绘制横屏Opt页面，column")
                 Row(
                     modifier = Modifier
                         .padding(vertical = 45.dp)
                 ) {
+                    OLog.i("界面","绘制横屏Opt页面，row")
                     FilledTonalButton(
                         modifier = Modifier
                             .size(width = 130.dp, height = 60.dp),
@@ -1143,6 +1147,7 @@ class MainActivity : AppCompatActivity() {
                         onClick = { opt_setappstauts(false) }
                     ) {
                         Text("一键优化")
+                        OLog.i("界面","绘制横屏Opt页面，button_opt")
                     }
                     Spacer(modifier = Modifier.width(25.dp))
                     FilledTonalButton(
