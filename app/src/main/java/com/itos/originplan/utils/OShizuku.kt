@@ -16,7 +16,7 @@ import rikka.shizuku.ShizukuBinderWrapper
 import rikka.shizuku.SystemServiceHelper
 
 object OShizuku {
-    val myUserId = android.os.Process.myUserHandle().hashCode()
+    private val myUserId = android.os.Process.myUserHandle().hashCode()
     private val isRoot get() = Shizuku.getUid() == 0
     private val userId get() = if (isRoot) myUserId else 0
     private val callerPackage get() = if (isRoot) BuildConfig.APPLICATION_ID else "com.android.shell"
@@ -159,7 +159,6 @@ object OShizuku {
                 )
                 HiddenApiBypass.invoke(it::class.java, it, "build")
             }
-
     fun execute(command: String, root: Boolean = isRoot): Pair<Int, String?> = runCatching {
         IShizukuService.Stub.asInterface(Shizuku.getBinder())
             .newProcess(arrayOf(if (root) "su" else "sh"), null, null).run {

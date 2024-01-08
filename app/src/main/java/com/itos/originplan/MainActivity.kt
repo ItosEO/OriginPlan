@@ -1,6 +1,8 @@
 package com.itos.originplan
 
 import android.annotation.SuppressLint
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
@@ -11,7 +13,9 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.text.util.Linkify
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -92,6 +96,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -1134,12 +1139,12 @@ class MainActivity : AppCompatActivity() {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center // 将子项垂直居中
             ) {
-                OLog.i("界面","绘制横屏Opt页面，column")
+//                OLog.i("界面","绘制横屏Opt页面，column")
                 Row(
                     modifier = Modifier
                         .padding(vertical = 45.dp)
                 ) {
-                    OLog.i("界面","绘制横屏Opt页面，row")
+//                    OLog.i("界面","绘制横屏Opt页面，row")
                     FilledTonalButton(
                         modifier = Modifier
                             .size(width = 130.dp, height = 60.dp),
@@ -1147,7 +1152,7 @@ class MainActivity : AppCompatActivity() {
                         onClick = { opt_setappstauts(false) }
                     ) {
                         Text("一键优化")
-                        OLog.i("界面","绘制横屏Opt页面，button_opt")
+//                        OLog.i("界面","绘制横屏Opt页面，button_opt")
                     }
                     Spacer(modifier = Modifier.width(25.dp))
                     FilledTonalButton(
@@ -1227,7 +1232,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+    private fun copyText(text: String) = getSystemService<ClipboardManager>()
+        ?.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), text))
 
+    private suspend fun onTerminalResult(exitValue: Int, msg: String?) = withContext(Dispatchers.Main) {
+        if (exitValue == 0 && msg.isNullOrBlank()) return@withContext
+        MaterialAlertDialogBuilder(context).apply {
+            if (!msg.isNullOrBlank()) {
+                if (exitValue != 0) {
+                    setTitle(getString(R.string.operation_failed, exitValue.toString()))
+                } else{
+                    setTitle("结果")
+                }
+                setMessage(msg)
+                setNeutralButton(android.R.string.copy) { _, _ -> copyText(msg) }
+            } else if (exitValue != 0) {
+                setMessage(getString(R.string.operation_failed, exitValue.toString()))
+            }
+        }.setPositiveButton(android.R.string.ok, null).show().findViewById<MaterialTextView>(android.R.id.message)
+            ?.setTextIsSelectable(true)
+    }
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Details() {
@@ -1238,6 +1262,30 @@ class MainActivity : AppCompatActivity() {
             // TopAppBar
             TopAppBar(title = { Text(text = "原·初") },
                 actions = {
+                    IconButton(onClick = {
+                        val inputEditText = EditText(context)
+                        inputEditText.hint = "Terminal"
+                        inputEditText.inputType = InputType.TYPE_CLASS_TEXT
+
+                        MaterialAlertDialogBuilder(context)
+                            .setTitle("终端")
+                            .setView(inputEditText)
+                            .setPositiveButton(android.R.string.ok) { _, _ ->
+                                lifecycleScope.launch {
+                                    val result = ShizukuExec(inputEditText.text.toString().toByteArray())
+                                    OLog.i("终端结果：",result!!)
+                                    onTerminalResult(ReturnValue, result)
+                                }
+                            }
+                            .setNegativeButton(android.R.string.cancel, null)
+                            .show()
+
+                    }) {
+                        Icon(
+                            imageVector = ImageVector.Companion.vectorResource(R.drawable.ic_baseline_terminal),
+                            contentDescription = "terminal"
+                        )
+                    }
                     IconButton(
                         onClick = {
                             val options = arrayOf(
