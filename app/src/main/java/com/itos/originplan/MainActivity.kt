@@ -1,5 +1,6 @@
 package com.itos.originplan
 
+import AboutPage
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -50,7 +51,6 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
@@ -104,9 +104,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.datatype.AppInfo
 import com.itos.originplan.datatype.OriginCardItem
-import com.itos.originplan.ui.Pages.subassemblies.OptButton
-import com.itos.originplan.ui.Pages.subassemblies.ProcessLimitButton
-import com.itos.originplan.ui.Pages.subassemblies.Settings_opt
 import com.itos.originplan.ui.theme.OriginPlanTheme
 import com.itos.originplan.utils.NetUtils
 import com.itos.originplan.utils.OLog
@@ -525,28 +522,7 @@ class MainActivity : AppCompatActivity() {
         return "null"
     }
 
-    private fun showImageDialog(imageName: String) {
-        val builder: AlertDialog.Builder = MaterialAlertDialogBuilder(this)
-
-        // 创建一个 ImageView 并添加到对话框中
-        val imageView = ImageView(this)
-        try {
-            val `is` = assets.open(imageName)
-            val bitmap = BitmapFactory.decodeStream(`is`)
-            imageView.setImageBitmap(bitmap)
-            imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-        } catch (e: IOException) {
-            e.printStackTrace()
-        }
-        builder.setView(imageView) // 将 ImageView 加到对话框中
-        builder.setNegativeButton("OK") { dialog, which ->
-            // 点击 OK 按钮后的操作
-            dialog.dismiss()
-        }
-        builder.show() // 显示对话框
-    }
-
-    private fun showLicenses() {
+    fun showLicenses() {
         // val customContext = ContextThemeWrapper(context, R.style.Theme_MDialog)
         MaterialAlertDialogBuilder(context)
             .setTitle(R.string.action_licenses)
@@ -562,7 +538,7 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
-    private fun show_author() {
+    fun show_author() {
         try {
             val intent = Intent(Intent.ACTION_VIEW)
             intent.data = Uri.parse("coolmarket://u/3287595")
@@ -634,7 +610,7 @@ class MainActivity : AppCompatActivity() {
         } ?: "未安装"
     }
 
-    private fun openLink(url: String) {
+     fun openLink(url: String) {
         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
@@ -827,356 +803,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-
-    @Composable
-    fun ItemsCardWidget(
-        colors: CardColors = CardDefaults.elevatedCardColors(),
-        onClick: (() -> Unit)? = null,
-        showItemIcon: Boolean = false,
-        icon: (@Composable () -> Unit)? = null,
-        title: (@Composable () -> Unit)? = null,
-        items: List<OriginCardItem>,
-        buttons: (@Composable () -> Unit)? = null
-    ) {
-        CardWidget(
-            colors = colors,
-            onClick = onClick,
-            icon = icon,
-            title = title,
-            content = {
-                @Composable
-                fun ItemWidget(item: OriginCardItem) {
-                    Row(
-                        modifier = Modifier
-                            .clickable(enabled = item.onClick != null, onClick = item.onClick ?: {})
-                            .padding(horizontal = 24.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(24.dp)
-                    ) {
-                        if (showItemIcon) {
-                            if (item.icon != null) {
-                                Icon(imageVector = item.icon, contentDescription = item.label)
-                            } else {
-                                Spacer(modifier = Modifier.size(32.dp))
-                            }
-                        }
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                        ) {
-                            Text(text = item.label, style = MaterialTheme.typography.bodyLarge)
-                            if (item.content != null) {
-                                Text(
-                                    text = item.content,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                        }
-                    }
-                }
-                Column {
-                    items.forEach {
-                        ItemWidget(it)
-                    }
-                }
-            },
-            buttons = buttons
-        )
-    }
-
-    @Composable
-    fun CardWidget(
-        colors: CardColors = CardDefaults.elevatedCardColors(),
-        onClick: (() -> Unit)? = null,
-        icon: (@Composable () -> Unit)? = null,
-        title: (@Composable () -> Unit)? = null,
-        content: (@Composable () -> Unit)? = null,
-        buttons: (@Composable () -> Unit)? = null
-    ) {
-        ElevatedCard(
-            colors = colors,
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 5.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = onClick != null, onClick = onClick ?: {})
-                    .padding(vertical = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                if (icon != null) {
-                    CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.secondary) {
-                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            icon()
-                        }
-                    }
-                }
-                if (title != null) {
-                    ProvideTextStyle(value = MaterialTheme.typography.titleLarge) {
-                        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-                            title()
-                        }
-                    }
-                }
-                if (content != null) {
-                    Box {
-                        content()
-                    }
-                }
-                if (buttons != null) {
-                    Box {
-                        buttons()
-                    }
-                }
-            }
-        }
-    }
-
-    @Composable
-    fun StatusWidget() {
-
-//        val containerColor = when (getString(R.string.build_type)) {
-//            "Alpha" -> MaterialTheme.colorScheme.primaryContainer
-//            "Beta" -> MaterialTheme.colorScheme.secondaryContainer
-//            "Release" -> MaterialTheme.colorScheme.tertiaryContainer
-//            else -> MaterialTheme.colorScheme.tertiaryContainer
-//        }
-//
-//        val onContainerColor = when (getString(R.string.build_type)) {
-//            "Alpha" -> MaterialTheme.colorScheme.onPrimaryContainer
-//            "Beta" -> MaterialTheme.colorScheme.onSecondaryContainer
-//            "Release" -> MaterialTheme.colorScheme.onTertiaryContainer
-//            else -> MaterialTheme.colorScheme.onTertiaryContainer
-//        }
-//
-        val containerColor = MaterialTheme.colorScheme.primaryContainer
-        val onContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
-
-        val level = getString(R.string.build_type)
-
-        CardWidget(
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = containerColor,
-                contentColor = onContainerColor
-            ),
-            icon = {
-                Image(
-                    modifier = Modifier
-                        .size(56.dp),
-                    painter = rememberDrawablePainter(
-                        drawable = ContextCompat.getDrawable(
-                            LocalContext.current,
-                            R.mipmap.ic_launcher_xplan
-                        )
-                    ),
-                    contentDescription = stringResource(id = R.string.app_name)
-                )
-            },
-            title = {
-                Text(
-                    modifier = Modifier,
-                    text = stringResource(id = R.string.app_name),
-                    style = MaterialTheme.typography.titleMedium,
-                )
-            },
-            content = {
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        modifier = Modifier.align(Alignment.Center),
-                        text = "$level [${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})]",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
-        )
-    }
-
-    @Composable
-    fun DonateWidget() {
-        LocalContext.current
-
-        val items = listOf(
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_alipay),
-                label = "支付宝",
-                onClick = {
-                    showImageDialog("zfb.jpg")
-                }
-            ),
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_wechatpay),
-                label = "微信",
-                onClick = {
-                    showImageDialog("wx.png")
-                }
-            ),
-
-            )
-        ItemsCardWidget(
-            title = {
-                Text(text = "捐赠")
-            },
-            items = items,
-            showItemIcon = true
-        )
-    }
-
-    @Composable
-    fun DiscussWidget() {
-        val items = listOf(
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
-                label = "BiliBili（开发者）",
-                onClick = {
-                    openLink("https://space.bilibili.com/329223542")
-                }),
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_bilibili),
-                label = "BiliBili（合作伙伴）",
-                onClick = {
-                    openLink("https://space.bilibili.com/1289434708")
-                }
-            ),
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_coolapk),
-                label = "酷安（开发者）",
-                onClick = {
-                    show_author()
-                }
-            ),
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_qq),
-                label = "QQ群",
-                onClick = {
-                    join_qq()
-                }
-            ),
-            OriginCardItem(
-                icon = Icons.Default.Share,
-                label = "更多软件",
-                onClick = {
-                    moreapp()
-                }
-            ),
-        )
-        ItemsCardWidget(
-            title = {
-                Text(text = "讨论&反馈&联系我们")
-            },
-            items = items,
-            showItemIcon = true
-        )
-    }
-
-    @Composable
-    fun OpenSourceWidget() {
-        val items = listOf(
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_code),
-
-                label = "Github",
-                onClick = {
-                    openLink("https://github.com/ItosEO/OriginPlan")
-                }
-            ),
-            OriginCardItem(
-                icon = ImageVector.Companion.vectorResource(R.drawable.ic_outline_lisence),
-
-                label = "许可证",
-                onClick = {
-                    showLicenses()
-                }
-            ),
-
-            )
-        ItemsCardWidget(
-            title = {
-                Text(text = "开源")
-            },
-            items = items,
-            showItemIcon = true
-        )
-    }
-
-    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun Opt() {
-        Scaffold(topBar = {
-            TopAppBar(
-                title = {
-                    Text(text = "优化")
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            MaterialAlertDialogBuilder(context)
-                                .setTitle("公告")
-                                .setMessage(show_notice)
-                                .setPositiveButton("了解") { dialog, which ->
-                                    dialog.dismiss()
-                                }
-                                .show()
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.Notifications,
-                            contentDescription = "help"
-                        )
-                    }
-                }
-            )
-        }) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center // 将子项垂直居中
-            ) {
-                OptButton(context)
-                ProcessLimitButton(context)
-                Settings_opt(context)
-            }
-
-        }
-    }
-
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun About() {
-        Scaffold(
-            modifier = Modifier
-                .windowInsetsPadding(windowInsets)
-                .fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Text(text = "关于")
-                    },
-                )
-            },
-        ) {
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(it),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                item {
-                    StatusWidget()
-                }
-                item {
-                    DonateWidget()
-                }
-                item {
-                    DiscussWidget()
-                }
-                item {
-                    OpenSourceWidget()
-                }
-            }
-        }
-    }
     private fun copyText(text: String) = getSystemService<ClipboardManager>()
         ?.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), text))
 
@@ -1545,7 +1171,7 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         OLog.i("界面","绘制横屏开始")
                         composable("2") { Details() }
-                        composable("3") { About() }
+                        composable("3") { AboutPage(context) }
                         composable("1") { OptPage(context) }
                         // 添加其他页面的 composable 函数，类似上面的示例
                     }
@@ -1556,7 +1182,7 @@ class MainActivity : AppCompatActivity() {
                         startDestination = "1"
                     ) {
                         composable("2") { Details() }
-                        composable("3") { About() }
+                        composable("3") { AboutPage(context) }
                         composable("1") { OptPage(context) }
                         // 添加其他页面的 composable 函数，类似上面的示例
                     }
@@ -1612,10 +1238,12 @@ class MainActivity : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                Opt()
+                OptPage(context)
             }
         }
     }
+
+
 }
 
 

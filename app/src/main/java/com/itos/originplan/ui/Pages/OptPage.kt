@@ -17,9 +17,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.itos.originplan.ui.Pages.subassemblies.OptButton
-import com.itos.originplan.ui.Pages.subassemblies.ProcessLimitButton
-import com.itos.originplan.ui.Pages.subassemblies.Settings_opt
+import com.itos.originplan.ui.Pages.subassemblies.Opt.OptButton
+import com.itos.originplan.ui.Pages.subassemblies.Opt.ProcessLimitButton
+import com.itos.originplan.ui.Pages.subassemblies.Opt.Settings_opt
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)

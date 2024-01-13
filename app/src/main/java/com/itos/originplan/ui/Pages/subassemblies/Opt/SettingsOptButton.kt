@@ -1,4 +1,4 @@
-package com.itos.originplan.ui.Pages.subassemblies
+package com.itos.originplan.ui.Pages.subassemblies.Opt
 
 import android.content.Context
 import androidx.compose.foundation.layout.Row
