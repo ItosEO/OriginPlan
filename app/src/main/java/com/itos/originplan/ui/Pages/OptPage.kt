@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.itos.originplan.XPlan.Companion.app
 import com.itos.originplan.ui.Pages.subassemblies.Opt.OptButton
 import com.itos.originplan.ui.Pages.subassemblies.Opt.ProcessLimitButton
 import com.itos.originplan.ui.Pages.subassemblies.Opt.Settings_opt
@@ -24,7 +25,7 @@ import com.itos.originplan.ui.Pages.subassemblies.Opt.Settings_opt
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OptPage(context: Context) {
+fun OptPage() {
     Scaffold(topBar = {
         TopAppBar(
             title = {
@@ -33,9 +34,9 @@ fun OptPage(context: Context) {
             actions = {
                 IconButton(
                     onClick = {
-                        MaterialAlertDialogBuilder(context)
+                        MaterialAlertDialogBuilder(app)
                             .setTitle("公告")
-                            .setMessage((context as? MainActivity)?.show_notice)
+                            .setMessage(app.show_notice)
                             .setPositiveButton("了解") { dialog, which ->
                                 dialog.dismiss()
                             }
@@ -56,9 +57,9 @@ fun OptPage(context: Context) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center // 将子项垂直居中
         ) {
-            OptButton(context)
-            ProcessLimitButton(context)
-            Settings_opt(context)
+            OptButton()
+            ProcessLimitButton()
+            Settings_opt()
         }
 
     }

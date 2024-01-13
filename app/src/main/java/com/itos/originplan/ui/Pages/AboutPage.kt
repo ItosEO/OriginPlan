@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutPage(context: Context) {
+fun AboutPage() {
     Scaffold(
         modifier = Modifier
             .windowInsetsPadding(TopAppBarDefaults.windowInsets)
@@ -37,16 +37,16 @@ fun AboutPage(context: Context) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item {
-                StatusWidget(context)
+                StatusWidget()
             }
             item {
-                DonateWidget(context)
+                DonateWidget()
             }
             item {
-                DiscussWidget(context)
+                DiscussWidget()
             }
             item {
-                OpenSourceWidget(context)
+                OpenSourceWidget()
             }
         }
     }

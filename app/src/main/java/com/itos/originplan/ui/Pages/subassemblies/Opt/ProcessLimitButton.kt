@@ -14,12 +14,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.itos.originplan.MainActivity
+import com.itos.originplan.XPlan
+import com.itos.originplan.XPlan.Companion.app
 
 @SuppressLint("StaticFieldLeak")
 
 @Composable
-fun ProcessLimitButton(context:Context){
+fun ProcessLimitButton(){
     Row(
         modifier = Modifier
             .padding(vertical = 45.dp)
@@ -29,7 +30,7 @@ fun ProcessLimitButton(context:Context){
                 .size(width = 130.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
-                (context as? MainActivity)?.patchProcessLimit()
+                app.patchProcessLimit()
             }
         ) {
             Text("调整Android进程设置", textAlign = TextAlign.Center)
@@ -40,7 +41,7 @@ fun ProcessLimitButton(context:Context){
                 .size(width = 130.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
-                (context as? MainActivity)?.unpatchProcessLimit()
+                app.unpatchProcessLimit()
             }
         ) {
             Text("还原\n进程设置", textAlign = TextAlign.Center)

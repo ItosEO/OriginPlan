@@ -9,33 +9,25 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.BitmapFactory
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.text.util.Linkify
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.compose.setContent
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -47,16 +39,12 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Create
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.CardColors
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -66,14 +54,11 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults.windowInsets
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.RecomposeScope
 import androidx.compose.runtime.currentRecomposeScope
@@ -87,11 +72,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
@@ -103,12 +86,14 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.datatype.AppInfo
-import com.itos.originplan.datatype.OriginCardItem
 import com.itos.originplan.ui.theme.OriginPlanTheme
 import com.itos.originplan.utils.NetUtils
 import com.itos.originplan.utils.OLog
 import com.itos.originplan.utils.OPackage
+import com.itos.originplan.utils.OPackage.getAppIconByPackageName
 import com.itos.originplan.utils.OShizuku
+import com.itos.originplan.utils.OShizuku.checkShizuku
+import com.itos.originplan.utils.OUI
 import com.itos.originplan.utils.SpUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -117,14 +102,13 @@ import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.ShizukuRemoteProcess
 import java.io.BufferedReader
-import java.io.IOException
 import java.io.InputStreamReader
 import java.io.OutputStream
 
 
 // TODO 拆分About页面
 // TODO 做选择卸载方式
-class MainActivity : AppCompatActivity() {
+class XPlan : AppCompatActivity() {
     val context: Context = this
     var ReturnValue = 0
     var br = false
@@ -136,7 +120,7 @@ class MainActivity : AppCompatActivity() {
 
     //    private var FirstTime_pf: SharedPreferences? = null
     private val pkglist = mutableListOf<AppInfo>()
-    private val optlist = mutableListOf<AppInfo>()
+    val optlist = mutableListOf<AppInfo>()
 
     private val requestPermissionResultListener =
         Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
@@ -164,6 +148,32 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        load_applist()
+        app = this
+
+        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
+        // 3是a13，2是a12（service call），1是pm增强，0是pm
+        when (Build.VERSION.SDK_INT) {
+            Build.VERSION_CODES.TIRAMISU -> {
+                SpUtils.setParam(context, "method", 3)
+            }
+
+            Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
+                SpUtils.setParam(context, "method", 2)
+            }
+
+            else -> {
+                SpUtils.setParam(context, "method", 1)
+            }
+        }
+        checkShizuku()
+        Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
+        Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
+        guide()
+        generateAppList(context)
+        update_notice()
+    }
+    private fun load_applist(){
         try {
             // 打开 pkglistfile 文件输入流
             val inputStream_pkg = resources.openRawResource(R.raw.pkglist)
@@ -190,75 +200,25 @@ class MainActivity : AppCompatActivity() {
             // 处理异常，例如文件不存在等情况
             e.printStackTrace()
         }
-
-        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
-        val FirstTime_pf = getSharedPreferences("data", 0)
-        // 3是a13，2是a12（service call），1是pm增强，0是pm
-        when (Build.VERSION.SDK_INT) {
-            Build.VERSION_CODES.TIRAMISU -> {
-                SpUtils.setParam(context, "method", 3)
-            }
-
-            Build.VERSION_CODES.S, Build.VERSION_CODES.S_V2 -> {
-                SpUtils.setParam(context, "method", 2)
-            }
-
-            else -> {
-                SpUtils.setParam(context, "method", 1)
-            }
-        }
-        if (FirstTime_pf.getBoolean("if_first_time", true)) {
+    }
+    private fun guide() {
+        if (SpUtils.getParam(context,"if_first_time", true) as Boolean) {
             MaterialAlertDialogBuilder(context)
                 .setTitle("帮助")
                 .setMessage("您需要Shiuzku激活教程吗")
                 .setPositiveButton("好的") { dialog, which ->
-                    FirstTime_pf.edit().putBoolean("if_first_time", false).apply()
-                    openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
+                    SpUtils.setParam( context,"if_first_time", false)
+                    OUI.openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
                 }
                 .setNegativeButton("我会") { dialog, which ->
-                    FirstTime_pf.edit().putBoolean("if_first_time", false).apply()
+                    SpUtils.setParam( context,"if_first_time", false)
                     dialog.dismiss()
                 }
                 .show()
                 .setCancelable(false)
         }
-        checkShizuku()
-        Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
-        Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
-        generateAppList(context)
-        update_notice()
     }
-
-    fun opt_setappstauts(status: Boolean) {
-        if (b && c) {
-            generateAppList(context)
-            // 遍历app list
-            for (appInfo in optlist) {
-                if (appInfo.isExist) {
-                    SetAppDisabled(mutableStateOf(status), appInfo.appPkg, appInfo.isExist, false)
-                    appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
-                }
-            }
-            if (!status) {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle("完成")
-                    .setMessage("一键优化完成")
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show()
-            } else {
-                MaterialAlertDialogBuilder(context)
-                    .setTitle("完成")
-                    .setMessage("还原完成")
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show()
-            }
-            generateAppList(context)
-        } else {
-            checkShizuku()
-        }
-    }
-
-    fun update_notice() {
+    private fun update_notice() {
         lifecycleScope.launch(Dispatchers.IO) {
             // 后台工作
             val update = NetUtils.Get("https://itos.codegang.top/share/originplan/app_update.json")
@@ -283,7 +243,7 @@ class MainActivity : AppCompatActivity() {
                         .setTitle("有新版本")
                         .setMessage("最新版本：$version_name($version)\n\n更新日志：\n$log")
                         .setPositiveButton("前往更新") { dialog, which ->
-                            openLink(url)
+                            OUI.openLink(url)
                             finish()
                         }
                         .setCancelable(false)
@@ -305,52 +265,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun moreapp() {
-        MaterialAlertDialogBuilder(context)
-            .setTitle("更多软件")
-            .setMessage(resources.openRawResource(R.raw.moreapp).bufferedReader().readText())
-            .setPositiveButton("了解", null)
-            .show()
-            .findViewById<MaterialTextView>(android.R.id.message)?.apply {
-                setTextIsSelectable(true)
-                Linkify.addLinks(this, Linkify.EMAIL_ADDRESSES or Linkify.WEB_URLS)
-                // The first time the link is clicked the background does not change color and
-                // the view needs to get focus once.
-                requestFocus()
-            }
-
-    }
-
-    private fun checkShizuku() {
-//        var b = true
-//        var c = false
-        try {
-            if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) Shizuku.requestPermission(
-                0
-            ) else c = true
-        } catch (e: java.lang.Exception) {
-            if (checkSelfPermission("moe.shizuku.manager.permission.API_V23") == PackageManager.PERMISSION_GRANTED) c =
-                true
-            if (e.javaClass == IllegalStateException::class.java) {
-                b = false
-            }
-        }
-        if (!b || !c) {
-            Toast.makeText(
-                this,
-                "Shizuku " + (if (b) "已运行" else "未运行") + if (c) " 已授权" else " 未授权",
-                Toast.LENGTH_LONG
-            ).show()
-        }
-    }
-
     private fun onRequestPermissionsResult() {
         checkShizuku()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-//        Shizuku.unbindUserService(userServiceArgs, userServiceConnection, true)
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
@@ -374,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                     1 -> {
                         ShizukuExec("pm uninstall --user 0 ${appInfo.appPkg}".toByteArray())
                     }
+
                     else -> {
                         ShizukuExec("pm uninstall ${appInfo.appPkg}".toByteArray())
                     }
@@ -382,9 +303,11 @@ class MainActivity : AppCompatActivity() {
                     .setTitle("结果")
                     .setMessage(t)
                     .setPositiveButton("ok") { _, _ ->
-                        appInfo.isExist = OPackage.isInstalled(appInfo.appPkg,context.packageManager)
+                        appInfo.isExist =
+                            OPackage.isInstalled(appInfo.appPkg, context.packageManager)
                         appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
-                        appInfo.appIcon = getAppIconByPackageName(appInfo.appPkg)
+                        appInfo.appIcon =
+                            getAppIconByPackageName(appInfo.appPkg, context.packageManager)
                         a.invalidate()
                     }
                     .show()
@@ -417,11 +340,13 @@ class MainActivity : AppCompatActivity() {
                     .setMessage(t)
                     .setPositiveButton("ok") { _, _ ->
                         //重载页面
-                        appInfo.isExist = OPackage.isInstalled(appInfo.appPkg,context.packageManager)
+                        appInfo.isExist =
+                            OPackage.isInstalled(appInfo.appPkg, context.packageManager)
                         if (appInfo.isExist) {
                             appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
                             appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
-                            appInfo.appIcon = getAppIconByPackageName(appInfo.appPkg)
+                            appInfo.appIcon =
+                                getAppIconByPackageName(appInfo.appPkg, context.packageManager)
                             a.invalidate()
                         }
                     }
@@ -432,7 +357,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-     fun patchProcessLimit() {
+    fun patchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
         ShizukuExec("device_config set_sync_disabled_for_tests persistent;device_config put activity_manager max_cached_processes 2147483647;device_config put activity_manager max_phantom_processes 2147483647;echo success".toByteArray())
         MaterialAlertDialogBuilder(context)
@@ -445,7 +370,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-     fun unpatchProcessLimit() {
+    fun unpatchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
         ShizukuExec("device_config set_sync_disabled_for_tests none;device_config put activity_manager max_cached_processes 32;device_config put activity_manager max_phantom_processes 32".toByteArray())
         MaterialAlertDialogBuilder(context)
@@ -523,18 +448,18 @@ class MainActivity : AppCompatActivity() {
         return "null"
     }
 
-    private fun SetAppDisabled(
+    fun SetAppDisabled(
         isDisabled: MutableState<Boolean>,
         packagename: String,
         isExist: Boolean,
         isShowToast: Boolean = true,
-        appinfolist: MutableState<AppInfo>? =null
+        appinfolist: MutableState<AppInfo>? = null
     ): Boolean? {
         if (isExist) {
             OShizuku.setAppDisabled(packagename, !isDisabled.value)
             val c = isAppDisabled(packagename)
             if (c != isDisabled.value) {
-                if(appinfolist!=null) appinfolist.value.isDisabled=c
+                if (appinfolist != null) appinfolist.value.isDisabled = c
                 isDisabled.value = c
                 return true
             } else {
@@ -550,18 +475,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-    private fun getAppIconByPackageName(packageName: String): Drawable? {
-        return try {
-            val packageManager = context.packageManager
-            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
-            packageManager.getApplicationIcon(applicationInfo)
-        } catch (e: PackageManager.NameNotFoundException) {
-            e.printStackTrace()
-            null
-        }
-    }
-
     private fun getAppNameByPackageName(context: Context, packageName: String): String {
         val packageManager: PackageManager = context.packageManager
         val applicationInfo: ApplicationInfo? = try {
@@ -575,9 +488,6 @@ class MainActivity : AppCompatActivity() {
         } ?: "未安装"
     }
 
-     fun openLink(url: String) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-    }
 
     /****************
      *
@@ -613,7 +523,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun isAppDisabled(appPackageName: String): Boolean {
+    fun isAppDisabled(appPackageName: String): Boolean {
         val packageManager: PackageManager = context.packageManager
 
         val packageInfo = packageManager.getPackageInfo(appPackageName, 0)
@@ -622,11 +532,10 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
     @Composable
     fun AppListItem(appinfo: AppInfo) {
         //让 compose监听这个的变化
-        var appInfo=remember{ mutableStateOf(appinfo) }
+        var appInfo = remember { mutableStateOf(appinfo) }
         val isDisabled = remember { mutableStateOf(appInfo.value.isDisabled) }
 //        val appinfo_remember=remember{ mutableStateOf(appInfo) }
 //        val refreshing = remember { mutableStateOf(false) }
@@ -679,7 +588,15 @@ class MainActivity : AppCompatActivity() {
             )
             // 右边是一个按钮
             IconButton(
-                onClick = { SetAppDisabled(isDisabled, appInfo.value.appPkg, appInfo.value.isExist,true,appInfo) }
+                onClick = {
+                    SetAppDisabled(
+                        isDisabled,
+                        appInfo.value.appPkg,
+                        appInfo.value.isExist,
+                        true,
+                        appInfo
+                    )
+                }
             ) {
 
                 val icon: ImageVector = if (appInfo.value.isExist && isDisabled.value) {
@@ -759,23 +676,26 @@ class MainActivity : AppCompatActivity() {
     private fun copyText(text: String) = getSystemService<ClipboardManager>()
         ?.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), text))
 
-    private suspend fun onTerminalResult(exitValue: Int, msg: String?) = withContext(Dispatchers.Main) {
-        if (exitValue == 0 && msg.isNullOrBlank()) return@withContext
-        MaterialAlertDialogBuilder(context).apply {
-            if (!msg.isNullOrBlank()) {
-                if (exitValue != 0) {
-                    setTitle(getString(R.string.operation_failed, exitValue.toString()))
-                } else{
-                    setTitle("结果")
+    private suspend fun onTerminalResult(exitValue: Int, msg: String?) =
+        withContext(Dispatchers.Main) {
+            if (exitValue == 0 && msg.isNullOrBlank()) return@withContext
+            MaterialAlertDialogBuilder(context).apply {
+                if (!msg.isNullOrBlank()) {
+                    if (exitValue != 0) {
+                        setTitle(getString(R.string.operation_failed, exitValue.toString()))
+                    } else {
+                        setTitle("结果")
+                    }
+                    setMessage(msg)
+                    setNeutralButton(android.R.string.copy) { _, _ -> copyText(msg) }
+                } else if (exitValue != 0) {
+                    setMessage(getString(R.string.operation_failed, exitValue.toString()))
                 }
-                setMessage(msg)
-                setNeutralButton(android.R.string.copy) { _, _ -> copyText(msg) }
-            } else if (exitValue != 0) {
-                setMessage(getString(R.string.operation_failed, exitValue.toString()))
-            }
-        }.setPositiveButton(android.R.string.ok, null).show().findViewById<MaterialTextView>(android.R.id.message)
-            ?.setTextIsSelectable(true)
-    }
+            }.setPositiveButton(android.R.string.ok, null).show()
+                .findViewById<MaterialTextView>(android.R.id.message)
+                ?.setTextIsSelectable(true)
+        }
+
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Details() {
@@ -796,8 +716,9 @@ class MainActivity : AppCompatActivity() {
                             .setView(inputEditText)
                             .setPositiveButton(android.R.string.ok) { _, _ ->
                                 lifecycleScope.launch {
-                                    val result = ShizukuExec(inputEditText.text.toString().toByteArray())
-                                    OLog.i("终端结果：",result!!)
+                                    val result =
+                                        ShizukuExec(inputEditText.text.toString().toByteArray())
+                                    OLog.i("终端结果：", result!!)
                                     onTerminalResult(ReturnValue, result)
                                 }
                             }
@@ -838,14 +759,17 @@ class MainActivity : AppCompatActivity() {
                                                 // 选择了 "pm命令"
                                                 SpUtils.setParam(context, "method", 0)
                                             }
+
                                             1 -> {
                                                 // 选择了 "pm命令"
                                                 SpUtils.setParam(context, "method", 1)
                                             }
+
                                             2 -> {
                                                 // 选择了 "service call（Android 12）"
                                                 SpUtils.setParam(context, "method", 2)
                                             }
+
                                             3 -> {
                                                 // 选择了 "service call（Android 13）"
                                                 SpUtils.setParam(context, "method", 3)
@@ -1122,10 +1046,10 @@ class MainActivity : AppCompatActivity() {
                         navController = navController,
                         startDestination = "1"
                     ) {
-                        OLog.i("界面","绘制横屏开始")
+                        OLog.i("界面", "绘制横屏开始")
                         composable("2") { Details() }
-                        composable("3") { AboutPage(context) }
-                        composable("1") { OptPage(context) }
+                        composable("3") { AboutPage() }
+                        composable("1") { OptPage() }
                         // 添加其他页面的 composable 函数，类似上面的示例
                     }
                 } else {
@@ -1135,8 +1059,8 @@ class MainActivity : AppCompatActivity() {
                         startDestination = "1"
                     ) {
                         composable("2") { Details() }
-                        composable("3") { AboutPage(context) }
-                        composable("1") { OptPage(context) }
+                        composable("3") { AboutPage() }
+                        composable("1") { OptPage() }
                         // 添加其他页面的 composable 函数，类似上面的示例
                     }
                 }
@@ -1155,7 +1079,7 @@ class MainActivity : AppCompatActivity() {
         var a: Boolean
         // 这里添加你的应用信息
         for (appinfo in pkglist) {
-            if (OPackage.isInstalled(appinfo.appPkg,context.packageManager)) {
+            if (OPackage.isInstalled(appinfo.appPkg, context.packageManager)) {
                 appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
                 a = isAppDisabled(appinfo.appPkg)
                 appinfo.isDisabled = a
@@ -1163,10 +1087,10 @@ class MainActivity : AppCompatActivity() {
                 appinfo.isExist = false
                 appinfo.appName = "未安装"
             }
-            appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg)
+            appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg, context.packageManager)
         }
         for (appinfo in optlist) {
-            if (OPackage.isInstalled(appinfo.appPkg,context.packageManager)) {
+            if (OPackage.isInstalled(appinfo.appPkg, context.packageManager)) {
                 appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
                 a = isAppDisabled(appinfo.appPkg)
                 appinfo.isDisabled = a
@@ -1174,7 +1098,7 @@ class MainActivity : AppCompatActivity() {
                 appinfo.isExist = false
                 appinfo.appName = "未安装"
             }
-            appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg)
+            appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg, context.packageManager)
         }
         OLog.i("列表项", pkglist.toString())
         return pkglist
@@ -1191,12 +1115,15 @@ class MainActivity : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                OptPage(context)
+                AppListContent()
             }
         }
     }
 
-
+    companion object {
+         @SuppressLint("StaticFieldLeak")
+         lateinit var app: XPlan private set
+    }
 }
 
 

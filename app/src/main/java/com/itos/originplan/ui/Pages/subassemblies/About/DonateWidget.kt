@@ -6,10 +6,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import com.itos.originplan.R
 import com.itos.originplan.datatype.OriginCardItem
-import com.itos.originplan.utils.showImageDialog
+import com.itos.originplan.utils.OUI
 
 @Composable
-fun DonateWidget(context: Context) {
+fun DonateWidget() {
     LocalContext.current
 
     val items = listOf(
@@ -17,14 +17,14 @@ fun DonateWidget(context: Context) {
             icon = ImageVector.vectorResource(R.drawable.ic_alipay),
             label = "支付宝",
             onClick = {
-                showImageDialog("zfb.jpg",context)
+                OUI.showImageDialog("zfb.jpg")
             }
         ),
         OriginCardItem(
             icon = ImageVector.vectorResource(R.drawable.ic_wechatpay),
             label = "微信",
             onClick = {
-                showImageDialog("wx.png",context)
+                OUI.showImageDialog("wx.png")
             }
         ),
 

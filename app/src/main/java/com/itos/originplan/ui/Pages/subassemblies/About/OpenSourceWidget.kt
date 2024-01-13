@@ -6,16 +6,17 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
-import com.itos.originplan.MainActivity
+import com.itos.originplan.XPlan
 import com.itos.originplan.R
 import com.itos.originplan.datatype.OriginCardItem
+import com.itos.originplan.utils.OUI
+import com.itos.originplan.XPlan.Companion.app
 
-fun showLicenses(context: Context) {
-    MaterialAlertDialogBuilder(context)
+fun showLicenses() {
+    MaterialAlertDialogBuilder(app)
         .setTitle(R.string.action_licenses)
         .setMessage(
-            (context as? MainActivity)?.resources?.openRawResource(R.raw.licenses)?.bufferedReader()
-                ?.readText()
+            app.resources.openRawResource(R.raw.licenses).bufferedReader().readText()
         )
         .setPositiveButton(android.R.string.ok, null)
         .show()
@@ -27,14 +28,14 @@ fun showLicenses(context: Context) {
 }
 
 @Composable
-fun OpenSourceWidget(context: Context) {
+fun OpenSourceWidget() {
     val items = listOf(
         OriginCardItem(
             icon = ImageVector.vectorResource(R.drawable.ic_outline_code),
 
             label = "Github",
             onClick = {
-                (context as? MainActivity)?.openLink("https://github.com/ItosEO/OriginPlan")
+                OUI.openLink("https://github.com/ItosEO/OriginPlan")
             }
         ),
         OriginCardItem(
@@ -42,7 +43,7 @@ fun OpenSourceWidget(context: Context) {
 
             label = "许可证",
             onClick = {
-                showLicenses(context)
+                showLicenses()
             }
         ),
 

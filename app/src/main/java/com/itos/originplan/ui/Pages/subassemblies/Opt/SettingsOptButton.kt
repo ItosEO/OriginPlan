@@ -15,7 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun Settings_opt(context: Context) {
+fun Settings_opt() {
     Row(
         modifier = Modifier
             .padding(vertical = 45.dp)

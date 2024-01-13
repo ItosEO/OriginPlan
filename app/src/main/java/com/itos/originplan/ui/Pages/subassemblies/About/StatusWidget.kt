@@ -15,15 +15,15 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.itos.originplan.BuildConfig
-import com.itos.originplan.MainActivity
 import com.itos.originplan.R
+import com.itos.originplan.XPlan.Companion.app
 
 @Composable
-fun StatusWidget(context: Context) {
+fun StatusWidget() {
     val containerColor = MaterialTheme.colorScheme.primaryContainer
     val onContainerColor = MaterialTheme.colorScheme.onPrimaryContainer
 
-    val level = (context as? MainActivity)?.getString(R.string.build_type)
+    val level = app.getString(R.string.build_type)
 
     CardWidget(
         colors = CardDefaults.elevatedCardColors(

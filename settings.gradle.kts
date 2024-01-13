@@ -16,5 +16,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "OriginPlan"
+rootProject.name = "XPlan"
 include(":app")

@@ -8,7 +8,10 @@ import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.view.InputEvent
 import android.view.KeyEvent
+import android.widget.Toast
+import androidx.core.content.PermissionChecker.checkSelfPermission
 import com.itos.originplan.BuildConfig
+import com.itos.originplan.XPlan.Companion.app
 import moe.shizuku.server.IShizukuService
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.shizuku.Shizuku
@@ -106,69 +109,26 @@ object OShizuku {
         }
     }
 
-    fun setAppSuspended(packageName: String, suspended: Boolean): Boolean {
-        if (suspended) forceStopApp(packageName)
-        return runCatching {
-            val pm = asInterface("android.content.pm.IPackageManager", "package")
-            (when {
-                target(Build.VERSION_CODES.Q) -> HiddenApiBypass.invoke(
-                    pm::class.java,
-                    pm,
-                    "setPackagesSuspendedAsUser",
-                    arrayOf(packageName),
-                    suspended,
-                    null,
-                    null,
-                    if (suspended) suspendDialogInfo else null,
-                    callerPackage,
-                    userId
-                )
-
-                target(Build.VERSION_CODES.P) -> HiddenApiBypass.invoke(
-                    pm::class.java,
-                    pm,
-                    "setPackagesSuspendedAsUser",
-                    arrayOf(packageName),
-                    suspended,
-                    null,
-                    null,
-                    null /*dialogMessage*/,
-                    callerPackage,
-                    userId
-                )
-
-                target(Build.VERSION_CODES.N) -> pm::class.java.getMethod(
-                    "setPackagesSuspendedAsUser",
-                    Array<String>::class.java,
-                    Boolean::class.java,
-                    Int::class.java
-                ).invoke(pm, arrayOf(packageName), suspended, userId)
-
-                else -> return false
-            } as Array<*>).isEmpty()
-        }.getOrElse {
-            false
+     fun checkShizuku() {
+        try {
+            if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) Shizuku.requestPermission(
+                0
+            ) else app.c = true
+        } catch (e: java.lang.Exception) {
+            if (app.checkSelfPermission("moe.shizuku.manager.permission.API_V23") == PackageManager.PERMISSION_GRANTED) app.c =
+                true
+            if (e.javaClass == IllegalStateException::class.java) {
+                app.b = false
+            }
+        }
+        if (!app.b || !app.c) {
+            Toast.makeText(
+                app,
+                "Shizuku " + (if (app.b) "已运行" else "未运行") + if (app.c) " 已授权" else " 未授权",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
-
-    private val suspendDialogInfo: Any
-        @SuppressLint("PrivateApi") get() = HiddenApiBypass.newInstance(Class.forName("android.content.pm.SuspendDialogInfo\$Builder"))
-            .let {
-                HiddenApiBypass.invoke(
-                    it::class.java, it, "setNeutralButtonAction", 1 /*BUTTON_ACTION_UNSUSPEND*/
-                )
-                HiddenApiBypass.invoke(it::class.java, it, "build")
-            }
-    fun execute(command: String, root: Boolean = isRoot): Pair<Int, String?> = runCatching {
-        IShizukuService.Stub.asInterface(Shizuku.getBinder())
-            .newProcess(arrayOf(if (root) "su" else "sh"), null, null).run {
-                ParcelFileDescriptor.AutoCloseOutputStream(outputStream).use {
-                    it.write(command.toByteArray())
-                }
-                waitFor() to inputStream.text.ifBlank { errorStream.text }.also { destroy() }
-            }
-    }.getOrElse { 0 to it.stackTraceToString() }
-
     private val ParcelFileDescriptor.text
         get() = ParcelFileDescriptor.AutoCloseInputStream(this)
             .use { it.bufferedReader().readText() }
