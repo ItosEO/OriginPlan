@@ -107,6 +107,7 @@ import com.itos.originplan.datatype.OriginCardItem
 import com.itos.originplan.ui.theme.OriginPlanTheme
 import com.itos.originplan.utils.NetUtils
 import com.itos.originplan.utils.OLog
+import com.itos.originplan.utils.OPackage
 import com.itos.originplan.utils.OShizuku
 import com.itos.originplan.utils.SpUtils
 import kotlinx.coroutines.Dispatchers
@@ -381,7 +382,7 @@ class MainActivity : AppCompatActivity() {
                     .setTitle("结果")
                     .setMessage(t)
                     .setPositiveButton("ok") { _, _ ->
-                        appInfo.isExist = isInstalled(appInfo.appPkg)
+                        appInfo.isExist = OPackage.isInstalled(appInfo.appPkg,context.packageManager)
                         appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
                         appInfo.appIcon = getAppIconByPackageName(appInfo.appPkg)
                         a.invalidate()
@@ -416,7 +417,7 @@ class MainActivity : AppCompatActivity() {
                     .setMessage(t)
                     .setPositiveButton("ok") { _, _ ->
                         //重载页面
-                        appInfo.isExist = isInstalled(appInfo.appPkg)
+                        appInfo.isExist = OPackage.isInstalled(appInfo.appPkg,context.packageManager)
                         if (appInfo.isExist) {
                             appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
                             appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
@@ -462,7 +463,7 @@ class MainActivity : AppCompatActivity() {
             return "正在执行其他操作"
         }
         if (!b || !c) {
-//            Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
             return "Shizuku 状态异常"
         }
         br = true
@@ -522,36 +523,6 @@ class MainActivity : AppCompatActivity() {
         return "null"
     }
 
-    fun showLicenses() {
-        // val customContext = ContextThemeWrapper(context, R.style.Theme_MDialog)
-        MaterialAlertDialogBuilder(context)
-            .setTitle(R.string.action_licenses)
-            .setMessage(resources.openRawResource(R.raw.licenses).bufferedReader().readText())
-            .setPositiveButton(android.R.string.ok, null)
-            .show()
-            .findViewById<MaterialTextView>(android.R.id.message)?.apply {
-                setTextIsSelectable(true)
-                Linkify.addLinks(this, Linkify.EMAIL_ADDRESSES or Linkify.WEB_URLS)
-                // The first time the link is clicked the background does not change color and
-                // the view needs to get focus once.
-                requestFocus()
-            }
-    }
-
-    fun show_author() {
-        try {
-            val intent = Intent(Intent.ACTION_VIEW)
-            intent.data = Uri.parse("coolmarket://u/3287595")
-            startActivity(intent)
-            finish()
-        } catch (e: java.lang.Exception) {
-            Toast.makeText(this, "打开酷安失败，已为您打开作者B站", Toast.LENGTH_SHORT).show()
-            openLink("https://space.bilibili.com/329223542")
-            // 处理ActivityNotFoundException异常，例如提示用户下载应用或打开其他应用商店
-        }
-    }
-
-
     private fun SetAppDisabled(
         isDisabled: MutableState<Boolean>,
         packagename: String,
@@ -578,13 +549,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkPermission(): Boolean {
-        return try {
-            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED
-        } catch (err: Throwable) {
-            false
-        }
-    }
+
 
     private fun getAppIconByPackageName(packageName: String): Drawable? {
         return try {
@@ -656,18 +621,6 @@ class MainActivity : AppCompatActivity() {
         return !packageInfo.applicationInfo.enabled
     }
 
-    private fun isInstalled(packageName: String): Boolean {
-        val pm = context.packageManager
-        try {
-            val packageInfo = pm.getPackageInfo(packageName, 0)
-            OLog.i("应用安装判断", "$packageName 已安装")
-            return packageInfo != null
-        } catch (ep: Throwable) {
-            OLog.i("应用安装判断", "$packageName 未安装")
-//            OLog.e("应用安装判断报错", ep)
-        }
-        return false
-    }
 
 
     @Composable
@@ -1202,7 +1155,7 @@ class MainActivity : AppCompatActivity() {
         var a: Boolean
         // 这里添加你的应用信息
         for (appinfo in pkglist) {
-            if (isInstalled(appinfo.appPkg)) {
+            if (OPackage.isInstalled(appinfo.appPkg,context.packageManager)) {
                 appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
                 a = isAppDisabled(appinfo.appPkg)
                 appinfo.isDisabled = a
@@ -1213,7 +1166,7 @@ class MainActivity : AppCompatActivity() {
             appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg)
         }
         for (appinfo in optlist) {
-            if (isInstalled(appinfo.appPkg)) {
+            if (OPackage.isInstalled(appinfo.appPkg,context.packageManager)) {
                 appinfo.appName = getAppNameByPackageName(context, appinfo.appPkg)
                 a = isAppDisabled(appinfo.appPkg)
                 appinfo.isDisabled = a

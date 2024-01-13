@@ -1,4 +1,7 @@
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Text
@@ -8,6 +11,17 @@ import androidx.compose.ui.res.vectorResource
 import com.itos.originplan.MainActivity
 import com.itos.originplan.R
 import com.itos.originplan.datatype.OriginCardItem
+fun show_author(context: Context) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW)
+        intent.data = Uri.parse("coolmarket://u/3287595")
+        (context as? MainActivity)?.startActivity(intent)
+        (context as? MainActivity)?.finish()
+    } catch (e: java.lang.Exception) {
+        Toast.makeText(context, "打开酷安失败，已为您打开作者B站", Toast.LENGTH_SHORT).show()
+        (context as? MainActivity)?.openLink("https://space.bilibili.com/329223542")
+    }
+}
 
 @Composable
 fun DiscussWidget(context: Context) {
@@ -29,7 +43,7 @@ fun DiscussWidget(context: Context) {
             icon = ImageVector.vectorResource(R.drawable.ic_outline_coolapk),
             label = "酷安（开发者）",
             onClick = {
-                (context as? MainActivity)?.show_author()
+                show_author(context)
             }
         ),
         OriginCardItem(
