@@ -34,11 +34,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -60,7 +58,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -92,7 +89,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -108,6 +104,9 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.originplan.datatype.AppInfo
 import com.itos.originplan.datatype.OriginCardItem
+import com.itos.originplan.ui.Pages.subassemblies.OptButton
+import com.itos.originplan.ui.Pages.subassemblies.ProcessLimitButton
+import com.itos.originplan.ui.Pages.subassemblies.Settings_opt
 import com.itos.originplan.ui.theme.OriginPlanTheme
 import com.itos.originplan.utils.NetUtils
 import com.itos.originplan.utils.OLog
@@ -128,7 +127,7 @@ import java.io.OutputStream
 // TODO 拆分About页面
 // TODO 做选择卸载方式
 class MainActivity : AppCompatActivity() {
-    private val context: Context = this
+    val context: Context = this
     var ReturnValue = 0
     var br = false
     var h2: Thread? = null
@@ -232,7 +231,7 @@ class MainActivity : AppCompatActivity() {
         update_notice()
     }
 
-    private fun opt_setappstauts(status: Boolean) {
+    fun opt_setappstauts(status: Boolean) {
         if (b && c) {
             generateAppList(context)
             // 遍历app list
@@ -435,9 +434,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun patchProcessLimit() {
+     fun patchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
-        ShizukuExec("device_config set_sync_disabled_for_tests persistent;device_config put activity_manager max_cached_processes 2147483647;device_config put activity_manager max_phantom_processes 2147483647".toByteArray())
+        ShizukuExec("device_config set_sync_disabled_for_tests persistent;device_config put activity_manager max_cached_processes 2147483647;device_config put activity_manager max_phantom_processes 2147483647;echo success".toByteArray())
         MaterialAlertDialogBuilder(context)
             .setTitle("关闭缓存进程和虚进程数量限制")
             .setMessage("调整完成，是否立即重启")
@@ -448,7 +447,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun unpatchProcessLimit() {
+     fun unpatchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
         ShizukuExec("device_config set_sync_disabled_for_tests none;device_config put activity_manager max_cached_processes 32;device_config put activity_manager max_phantom_processes 32".toByteArray())
         MaterialAlertDialogBuilder(context)
@@ -461,12 +460,12 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun ShizukuExec(cmd: ByteArray): String? {
+    fun ShizukuExec(cmd: ByteArray): String? {
         if (br) {
             return "正在执行其他操作"
         }
         if (!b || !c) {
-            Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
             return "Shizuku 状态异常"
         }
         br = true
@@ -1102,7 +1101,6 @@ class MainActivity : AppCompatActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun Opt() {
-//        generateAppList(context)
         Scaffold(topBar = {
             TopAppBar(
                 title = {
@@ -1115,12 +1113,8 @@ class MainActivity : AppCompatActivity() {
                                 .setTitle("公告")
                                 .setMessage(show_notice)
                                 .setPositiveButton("了解") { dialog, which ->
-//                                    openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
                                     dialog.dismiss()
                                 }
-//                                .setNegativeButton("我会") { dialog, which ->
-//                                    dialog.dismiss()
-//                                }
                                 .show()
                         }
                     ) {
@@ -1132,64 +1126,15 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }) {
-            OLog.i("界面","绘制横屏Opt页面1")
             Column(
                 modifier = Modifier
                     .fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center // 将子项垂直居中
             ) {
-//                OLog.i("界面","绘制横屏Opt页面，column")
-                Row(
-                    modifier = Modifier
-                        .padding(vertical = 45.dp)
-                ) {
-//                    OLog.i("界面","绘制横屏Opt页面，row")
-                    FilledTonalButton(
-                        modifier = Modifier
-                            .size(width = 130.dp, height = 60.dp),
-                        shape = RoundedCornerShape(30),
-                        onClick = { opt_setappstauts(false) }
-                    ) {
-                        Text("一键优化")
-//                        OLog.i("界面","绘制横屏Opt页面，button_opt")
-                    }
-                    Spacer(modifier = Modifier.width(25.dp))
-                    FilledTonalButton(
-                        modifier = Modifier
-                            .size(width = 130.dp, height = 60.dp),
-                        shape = RoundedCornerShape(30),
-                        onClick = { opt_setappstauts(true) }
-                    ) {
-                        Text("还原")
-                    }
-                }
-                Row(
-                    modifier = Modifier
-                        .padding(vertical = 45.dp)
-                ) {
-                    FilledTonalButton(
-                        modifier = Modifier
-                            .size(width = 130.dp, height = 60.dp),
-                        shape = RoundedCornerShape(30),
-                        onClick = {
-                            patchProcessLimit()
-                        }
-                    ) {
-                        Text("调整Android进程设置", textAlign = TextAlign.Center)
-                    }
-                    Spacer(modifier = Modifier.width(25.dp))
-                    FilledTonalButton(
-                        modifier = Modifier
-                            .size(width = 130.dp, height = 60.dp),
-                        shape = RoundedCornerShape(30),
-                        onClick = {
-                            unpatchProcessLimit()
-                        }
-                    ) {
-                        Text("还原\n进程设置", textAlign = TextAlign.Center)
-                    }
-                }
+                OptButton(context)
+                ProcessLimitButton(context)
+                Settings_opt(context)
             }
 
         }
@@ -1576,25 +1521,34 @@ class MainActivity : AppCompatActivity() {
                     .padding(bottom = it.calculateBottomPadding()) // 添加 padding,防止遮挡内容
             ) {
                 if (isLandscapeScreen) {
-                    OLog.i("界面","绘制横屏判断完成")
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(start = 72.dp)
+//                    OLog.i("界面","绘制横屏判断完成")
+//                    Row(
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .padding(start = 72.dp)
+//                    ) {
+//                        // 在这里放置你的内容
+//                        NavHost(
+//                            navController = navController,
+//                            startDestination = "1"
+//                        ) {
+//                            OLog.i("界面","绘制横屏开始")
+//                            composable("2") { Details() }
+//                            composable("3") { About() }
+//                            composable("1") { Opt() }
+//                            // 添加其他页面的 composable 函数，类似上面的示例
+//                        }
+//                    }
+                    NavHost(
+                        navController = navController,
+                        startDestination = "1"
                     ) {
-                        // 在这里放置你的内容
-                        NavHost(
-                            navController = navController,
-                            startDestination = "1"
-                        ) {
-                            OLog.i("界面","绘制横屏开始")
-                            composable("2") { Details() }
-                            composable("3") { About() }
-                            composable("1") { Opt() }
-                            // 添加其他页面的 composable 函数，类似上面的示例
-                        }
+                        OLog.i("界面","绘制横屏开始")
+                        composable("2") { Details() }
+                        composable("3") { About() }
+                        composable("1") { OptPage(context) }
+                        // 添加其他页面的 composable 函数，类似上面的示例
                     }
-
                 } else {
 
                     NavHost(
@@ -1603,7 +1557,7 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         composable("2") { Details() }
                         composable("3") { About() }
-                        composable("1") { Opt() }
+                        composable("1") { OptPage(context) }
                         // 添加其他页面的 composable 函数，类似上面的示例
                     }
                 }
@@ -1643,13 +1597,6 @@ class MainActivity : AppCompatActivity() {
             }
             appinfo.appIcon = getAppIconByPackageName(appinfo.appPkg)
         }
-//        val testlist: List<AppInfo> = List(2) { index ->
-//            AppInfo(
-//                appName = "App $index",
-//                appPkg = "com.example.app$index",
-//                isDisabled = index % 2 == 0
-//            )
-//        }
         OLog.i("列表项", pkglist.toString())
         return pkglist
     }
