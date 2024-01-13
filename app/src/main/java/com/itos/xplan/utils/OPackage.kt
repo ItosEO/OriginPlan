@@ -1,4 +1,4 @@
-package com.itos.originplan.utils
+package com.itos.xplan.utils
 
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable

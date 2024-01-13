@@ -1,4 +1,3 @@
-import android.content.Context
 import android.text.util.Linkify
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -6,11 +5,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
-import com.itos.originplan.XPlan
-import com.itos.originplan.R
-import com.itos.originplan.datatype.OriginCardItem
-import com.itos.originplan.utils.OUI
-import com.itos.originplan.XPlan.Companion.app
+import com.itos.xplan.R
+import com.itos.xplan.datatype.OriginCardItem
+import com.itos.xplan.utils.OUI
+import com.itos.xplan.XPlan.Companion.app
 
 fun showLicenses() {
     MaterialAlertDialogBuilder(app)

@@ -1,7 +1,5 @@
-package com.itos.originplan.ui.Pages.subassemblies.Opt
+package com.itos.xplan.ui.Pages.subassemblies.Opt
 
-import android.annotation.SuppressLint
-import android.content.Context
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -14,13 +12,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.itos.originplan.XPlan
-import com.itos.originplan.XPlan.Companion.app
-
-@SuppressLint("StaticFieldLeak")
 
 @Composable
-fun ProcessLimitButton(){
+fun Settings_opt() {
     Row(
         modifier = Modifier
             .padding(vertical = 45.dp)
@@ -30,10 +24,9 @@ fun ProcessLimitButton(){
                 .size(width = 130.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
-                app.patchProcessLimit()
             }
         ) {
-            Text("调整Android进程设置", textAlign = TextAlign.Center)
+            Text("系统参数调优", textAlign = TextAlign.Center)
         }
         Spacer(modifier = Modifier.width(25.dp))
         FilledTonalButton(
@@ -41,10 +34,9 @@ fun ProcessLimitButton(){
                 .size(width = 130.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
-                app.unpatchProcessLimit()
             }
         ) {
-            Text("还原\n进程设置", textAlign = TextAlign.Center)
+            Text("还原\n系统参数", textAlign = TextAlign.Center)
         }
     }
 }

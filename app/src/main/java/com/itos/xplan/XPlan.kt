@@ -1,4 +1,4 @@
-package com.itos.originplan
+package com.itos.xplan
 
 import AboutPage
 import android.annotation.SuppressLint
@@ -13,7 +13,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
-import android.text.util.Linkify
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -85,16 +84,16 @@ import com.alibaba.fastjson.JSONObject
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
-import com.itos.originplan.datatype.AppInfo
-import com.itos.originplan.ui.theme.OriginPlanTheme
-import com.itos.originplan.utils.NetUtils
-import com.itos.originplan.utils.OLog
-import com.itos.originplan.utils.OPackage
-import com.itos.originplan.utils.OPackage.getAppIconByPackageName
-import com.itos.originplan.utils.OShizuku
-import com.itos.originplan.utils.OShizuku.checkShizuku
-import com.itos.originplan.utils.OUI
-import com.itos.originplan.utils.SpUtils
+import com.itos.xplan.datatype.AppInfo
+import com.itos.xplan.ui.theme.OriginPlanTheme
+import com.itos.xplan.utils.NetUtils
+import com.itos.xplan.utils.OLog
+import com.itos.xplan.utils.OPackage
+import com.itos.xplan.utils.OPackage.getAppIconByPackageName
+import com.itos.xplan.utils.OShizuku
+import com.itos.xplan.utils.OShizuku.checkShizuku
+import com.itos.xplan.utils.OUI
+import com.itos.xplan.utils.SpUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

@@ -4,18 +4,18 @@ plugins {
 }
 
 android {
-    namespace = "com.itos.originplan"
+    namespace = "com.itos.xplan"
     compileSdk = 34
     applicationVariants.all {
         outputs.all {
             val ver = defaultConfig.versionName+"(${defaultConfig.versionCode})"
 
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
-                "OriginPlan_$ver.apk"
+                "XPlan_$ver.apk"
         }
     }
     defaultConfig {
-        applicationId = "com.itos.originplan"
+        applicationId = "ccom.itos.xplan"
         minSdk = 26
         targetSdk = 34
         versionCode = 23

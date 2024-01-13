@@ -1,12 +1,11 @@
-import android.content.Context
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
-import com.itos.originplan.R
-import com.itos.originplan.datatype.OriginCardItem
-import com.itos.originplan.utils.OUI
+import com.itos.xplan.R
+import com.itos.xplan.datatype.OriginCardItem
+import com.itos.xplan.utils.OUI
 
 @Composable
 fun DonateWidget() {

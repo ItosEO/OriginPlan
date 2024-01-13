@@ -1,4 +1,3 @@
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,9 +13,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
-import com.itos.originplan.BuildConfig
-import com.itos.originplan.R
-import com.itos.originplan.XPlan.Companion.app
+import com.itos.xplan.BuildConfig
+import com.itos.xplan.R
+import com.itos.xplan.XPlan.Companion.app
 
 @Composable
 fun StatusWidget() {

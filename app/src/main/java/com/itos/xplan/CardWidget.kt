@@ -20,7 +20,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.itos.originplan.datatype.OriginCardItem
+import com.itos.xplan.datatype.OriginCardItem
 
 @Composable
 fun ItemsCardWidget(

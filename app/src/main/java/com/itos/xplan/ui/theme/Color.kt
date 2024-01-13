@@ -1,4 +1,4 @@
-package com.itos.originplan.ui.theme
+package com.itos.xplan.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

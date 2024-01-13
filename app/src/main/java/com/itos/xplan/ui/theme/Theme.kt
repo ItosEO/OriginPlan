@@ -1,4 +1,4 @@
-package com.itos.originplan.ui.theme
+package com.itos.xplan.ui.theme
 
 import android.app.Activity
 import android.os.Build
@@ -83,8 +83,10 @@ fun OriginPlanTheme(
         SideEffect {
             val window = (view.context as Activity).window
 
-            window.attributes.layoutInDisplayCutoutMode =
-                WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                window.attributes.layoutInDisplayCutoutMode =
+                    WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+            }
 
             WindowCompat.setDecorFitsSystemWindows(window, false)
 

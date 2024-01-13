@@ -1,6 +1,5 @@
-package com.itos.originplan.ui.Pages.subassemblies.Opt
+package com.itos.xplan.ui.Pages.subassemblies.Opt
 
-import android.content.Context
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -14,9 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.itos.originplan.XPlan
-import com.itos.originplan.XPlan.Companion.app
-import com.itos.originplan.utils.OShizuku
+import com.itos.xplan.XPlan.Companion.app
+import com.itos.xplan.utils.OShizuku
 
 @Composable
 fun OptButton(){

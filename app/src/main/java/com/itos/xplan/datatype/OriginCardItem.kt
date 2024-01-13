@@ -1,4 +1,4 @@
-package com.itos.originplan.datatype
+package com.itos.xplan.datatype
 
 import androidx.compose.ui.graphics.vector.ImageVector
 

@@ -1,7 +1,6 @@
-package com.itos.originplan
+package com.itos.xplan
 
 import android.annotation.SuppressLint
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -17,10 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.itos.originplan.XPlan.Companion.app
-import com.itos.originplan.ui.Pages.subassemblies.Opt.OptButton
-import com.itos.originplan.ui.Pages.subassemblies.Opt.ProcessLimitButton
-import com.itos.originplan.ui.Pages.subassemblies.Opt.Settings_opt
+import com.itos.xplan.XPlan.Companion.app
+import com.itos.xplan.ui.Pages.subassemblies.Opt.OptButton
+import com.itos.xplan.ui.Pages.subassemblies.Opt.ProcessLimitButton
+import com.itos.xplan.ui.Pages.subassemblies.Opt.Settings_opt
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)

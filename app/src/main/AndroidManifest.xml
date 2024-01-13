@@ -17,7 +17,7 @@
         android:screenOrientation="portrait"
         tools:targetApi="34">
         <activity
-            android:name="com.itos.originplan.XPlan"
+            android:name="com.itos.xplan.XPlan"
             android:exported="true"
             >
             <intent-filter>

@@ -1,6 +1,5 @@
-package com.itos.originplan.utils
+package com.itos.xplan.utils
 
-import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.IBinder
@@ -9,10 +8,8 @@ import android.os.SystemClock
 import android.view.InputEvent
 import android.view.KeyEvent
 import android.widget.Toast
-import androidx.core.content.PermissionChecker.checkSelfPermission
-import com.itos.originplan.BuildConfig
-import com.itos.originplan.XPlan.Companion.app
-import moe.shizuku.server.IShizukuService
+import com.itos.xplan.BuildConfig
+import com.itos.xplan.XPlan.Companion.app
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import rikka.shizuku.Shizuku
 import rikka.shizuku.ShizukuBinderWrapper

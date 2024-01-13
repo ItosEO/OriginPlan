@@ -1,4 +1,4 @@
-package com.itos.originplan.datatype
+package com.itos.xplan.datatype
 
 import android.graphics.drawable.Drawable
 
