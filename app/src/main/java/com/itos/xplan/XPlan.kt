@@ -167,7 +167,7 @@ class XPlan : AppCompatActivity() {
             }
         }
         checkShizuku()
-        OData.is_have_premissipn = OUI.check_secure_premission()
+        OUI.check_secure_premission()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
         guide()

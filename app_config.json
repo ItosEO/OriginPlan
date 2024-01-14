@@ -1,0 +1,6 @@
+{
+  "data": [["test1", "1", "global"],["test2","2","system"],["test3","3","secure"]],
+  "shell": "echo test",
+  "restore ":"echo restore",
+  "debug": "echo debug"
+}

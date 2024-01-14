@@ -15,7 +15,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId = "ccom.itos.xplan"
+        applicationId = "com.itos.xplan"
         minSdk = 26
         targetSdk = 34
         versionCode = 23

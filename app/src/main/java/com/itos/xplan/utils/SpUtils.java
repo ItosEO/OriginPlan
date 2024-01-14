@@ -2,6 +2,7 @@ package com.itos.xplan.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.provider.Settings;
 
 public class SpUtils {
 
@@ -72,6 +73,70 @@ public class SpUtils {
         return null;
     }
 
-
+    public static void putSettingsParam(Context context , String fenqu,String key, Object object){
+        String type = object.getClass().getSimpleName();
+        switch (fenqu) {
+            case "system":
+                switch (type) {
+                    case "String":
+                    case "Boolean":
+                        Settings.System.putString(context.getContentResolver(), key, (String) object);
+                        break;
+                    case "Integer":
+                        Settings.System.putInt(context.getContentResolver(), key, (Integer) object);
+                        break;
+                    case "Float":
+                        Settings.System.putFloat(context.getContentResolver(), key, (Float) object);
+                        break;
+                    case "Long":
+                        Settings.System.putLong(context.getContentResolver(), key, (Long) object);
+                        break;
+                }
+            case "global":
+                switch (type) {
+                    case "String":
+                    case "Boolean":
+                        Settings.Global.putString(context.getContentResolver(), key, (String) object);
+                        break;
+                    case "Integer":
+                        Settings.Global.putInt(context.getContentResolver(), key, (Integer) object);
+                        break;
+                    case "Float":
+                        Settings.Global.putFloat(context.getContentResolver(), key, (Float) object);
+                        break;
+                    case "Long":
+                        Settings.Global.putLong(context.getContentResolver(), key, (Long) object);
+                        break;
+                }
+            case "secure":
+                switch (type) {
+                    case "String":
+                    case "Boolean":
+                        Settings.Secure.putString(context.getContentResolver(), key, (String) object);
+                        break;
+                    case "Integer":
+                        Settings.Secure.putInt(context.getContentResolver(), key, (Integer) object);
+                        break;
+                    case "Float":
+                        Settings.Secure.putFloat(context.getContentResolver(), key, (Float) object);
+                        break;
+                    case "Long":
+                        Settings.Secure.putLong(context.getContentResolver(), key, (Long) object);
+                        break;
+                }
+        }
+    }
+    public static String getSettingsParam(Context context , String fenqu,String key){
+        switch (fenqu) {
+            case "system":
+                return Settings.System.getString(context.getContentResolver(), key);
+            case "global":
+                return Settings.Global.getString(context.getContentResolver(), key);
+            case "secure":
+                return Settings.Secure.getString(context.getContentResolver(), key);
+            default:
+                return "null";
+        }
+    }
 
 }

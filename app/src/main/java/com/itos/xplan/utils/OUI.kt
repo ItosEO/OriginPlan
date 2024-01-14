@@ -17,12 +17,13 @@ import java.io.IOException
 
 object OUI {
 
-    fun check_secure_premission() :Boolean{
+    fun check_secure_premission() {
         try {
             Settings.Global.putInt(app.contentResolver, "test", 1)
-            return true
+            OData.is_have_premissipn = true
         } catch (e: Exception) {
-            OShizuku.checkShizuku()
+            OLog.e("权限异常",e)
+//            OShizuku.checkShizuku()
             if (app.b && app.c) {
                 val p: Process = Shizuku.newProcess(arrayOf("sh"), null, null)
                 val out = p.outputStream
@@ -32,7 +33,7 @@ object OUI {
             } else {
                 OShizuku.checkShizuku()
             }
-            return false
+            OData.is_have_premissipn = false
         }
     }
     fun openLink(url: String) {

@@ -15,19 +15,53 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.itos.xplan.XPlan.Companion.app
 import android.provider.Settings;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.itos.xplan.utils.OData
 import com.itos.xplan.utils.OLog
+import com.itos.xplan.utils.OPackage
+import com.itos.xplan.utils.SpUtils
 
 fun SettingsOpt(){
-    if (OData.is_have_premissipn){
-        OData.configdata.data.forEach { innerList ->
-            innerList.forEach { value ->
-                OLog.i("系统参数调优",value)
-            }
-        }
-    }else{
-        Toast.makeText(app,"权限不足",Toast.LENGTH_SHORT).show()
-    }
+//    if (OData.is_have_premissipn){
+//        OData.configdata.data.forEach { innerList ->
+////            Settings.System.putString(app.contentResolver, innerList[0], Integer.valueOf(innerList[1]))
+//            SpUtils.putSettingsParam(app, innerList[2], innerList[0], innerList[1])
+//            OLog.i("系统参数调优",innerList.toString())
+//        }
+//    }else{
+//        Toast.makeText(app,"权限不足",Toast.LENGTH_SHORT).show()
+//    }
+    app.ShizukuExec(OData.configdata.shell.toByteArray())
+    MaterialAlertDialogBuilder(app)
+        .setTitle("完成")
+        .setMessage("调整完成")
+        .setPositiveButton("OK",null)
+        .show()
+}
+fun SettingsRestore (){
+//    if (OData.is_have_premissipn){
+//        OData.configdata.data.forEach { innerList ->
+////            Settings.System.putString(app.contentResolver, innerList[0], Integer.valueOf(innerList[1]))
+//            SpUtils.putSettingsParam(app, innerList[2], innerList[0], innerList[1])
+//            OLog.i("系统参数调优",innerList.toString())
+//        }
+//    }else{
+//        Toast.makeText(app,"权限不足",Toast.LENGTH_SHORT).show()
+//    }
+    app.ShizukuExec(OData.configdata.restore.toByteArray())
+    MaterialAlertDialogBuilder(app)
+        .setTitle("完成")
+        .setMessage("还原完成")
+        .setPositiveButton("OK",null)
+        .show()
+}
+fun SettingsDebug(){
+    val temp=app.ShizukuExec(OData.configdata.debug.toByteArray())
+    MaterialAlertDialogBuilder(app)
+        .setTitle("调试信息")
+        .setMessage(temp)
+        .setPositiveButton("OK",null)
+        .show()
 }
 @Composable
 fun Settings_opt() {
@@ -37,7 +71,7 @@ fun Settings_opt() {
     ) {
         FilledTonalButton(
             modifier = Modifier
-                .size(width = 130.dp, height = 60.dp),
+                .size(width = 70.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
                 SettingsOpt()
@@ -49,13 +83,26 @@ fun Settings_opt() {
         Spacer(modifier = Modifier.width(25.dp))
         FilledTonalButton(
             modifier = Modifier
-                .size(width = 130.dp, height = 60.dp),
+                .size(width = 70.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
+                SettingsRestore()
                 Toast.makeText(app, "开发中...", Toast.LENGTH_SHORT).show()
             }
         ) {
             Text("还原\n系统参数", textAlign = TextAlign.Center)
+        }
+        Spacer(modifier = Modifier.width(25.dp))
+        FilledTonalButton(
+            modifier = Modifier
+                .size(width = 70.dp, height = 60.dp),
+            shape = RoundedCornerShape(30),
+            onClick = {
+                SettingsDebug()
+                Toast.makeText(app, "开发中...", Toast.LENGTH_SHORT).show()
+            }
+        ) {
+            Text("调试", textAlign = TextAlign.Center)
         }
     }
 }
