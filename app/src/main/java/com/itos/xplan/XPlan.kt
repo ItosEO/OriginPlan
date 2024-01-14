@@ -85,8 +85,10 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.xplan.datatype.AppInfo
+import com.itos.xplan.datatype.ConfigData
 import com.itos.xplan.ui.theme.OriginPlanTheme
 import com.itos.xplan.utils.NetUtils
+import com.itos.xplan.utils.OData
 import com.itos.xplan.utils.OLog
 import com.itos.xplan.utils.OPackage
 import com.itos.xplan.utils.OPackage.getAppIconByPackageName
@@ -104,9 +106,8 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStream
 
+// TODO 拆Details页面
 
-// TODO 拆分About页面
-// TODO 做选择卸载方式
 class XPlan : AppCompatActivity() {
     val context: Context = this
     var ReturnValue = 0
@@ -166,57 +167,63 @@ class XPlan : AppCompatActivity() {
             }
         }
         checkShizuku()
+        OData.is_have_premissipn = OUI.check_secure_premission()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
         guide()
         generateAppList(context)
         update_notice()
+        update_config()
     }
-    private fun load_applist(){
-        try {
-            // 打开 pkglistfile 文件输入流
-            val inputStream_pkg = resources.openRawResource(R.raw.pkglist)
-            val reader_pkg = BufferedReader(InputStreamReader(inputStream_pkg))
-            val inputStream_opt = resources.openRawResource(R.raw.optlist)
-            val reader_opt = BufferedReader(InputStreamReader(inputStream_opt))
 
-            // 逐行读取文件内容
-            var line_pkg: String?
-            var line_opt: String?
-            while (reader_pkg.readLine().also { line_pkg = it } != null) {
-                val packageName = line_pkg!!.trim()
-                // 创建 AppInfo 对象，并添加到列表
-                val appInfo = AppInfo(appName = "", appPkg = packageName)
-                pkglist.add(appInfo)
+    private fun load_applist() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                // 打开 pkglistfile 文件输入流
+                val inputStream_pkg = resources.openRawResource(R.raw.pkglist)
+                val reader_pkg = BufferedReader(InputStreamReader(inputStream_pkg))
+                val inputStream_opt = resources.openRawResource(R.raw.optlist)
+                val reader_opt = BufferedReader(InputStreamReader(inputStream_opt))
+
+                // 逐行读取文件内容
+                var line_pkg: String?
+                var line_opt: String?
+                while (reader_pkg.readLine().also { line_pkg = it } != null) {
+                    val packageName = line_pkg!!.trim()
+                    // 创建 AppInfo 对象，并添加到列表
+                    val appInfo = AppInfo(appName = "", appPkg = packageName)
+                    pkglist.add(appInfo)
+                }
+                while (reader_opt.readLine().also { line_opt = it } != null) {
+                    val packageName = line_opt!!.trim()
+                    // 创建 AppInfo 对象，并添加到列表
+                    val appInfo = AppInfo(appName = "", appPkg = packageName)
+                    optlist.add(appInfo)
+                }
+            } catch (_: Exception) {
             }
-            while (reader_opt.readLine().also { line_opt = it } != null) {
-                val packageName = line_opt!!.trim()
-                // 创建 AppInfo 对象，并添加到列表
-                val appInfo = AppInfo(appName = "", appPkg = packageName)
-                optlist.add(appInfo)
-            }
-        } catch (e: Exception) {
-            // 处理异常，例如文件不存在等情况
-            e.printStackTrace()
         }
+
     }
+
     private fun guide() {
-        if (SpUtils.getParam(context,"if_first_time", true) as Boolean) {
+        if (SpUtils.getParam(context, "if_first_time", true) as Boolean) {
             MaterialAlertDialogBuilder(context)
                 .setTitle("帮助")
                 .setMessage("您需要Shiuzku激活教程吗")
                 .setPositiveButton("好的") { dialog, which ->
-                    SpUtils.setParam( context,"if_first_time", false)
+                    SpUtils.setParam(context, "if_first_time", false)
                     OUI.openLink("https://www.bilibili.com/video/BV1o94y1u7Kq")
                 }
                 .setNegativeButton("我会") { dialog, which ->
-                    SpUtils.setParam( context,"if_first_time", false)
+                    SpUtils.setParam(context, "if_first_time", false)
                     dialog.dismiss()
                 }
                 .show()
                 .setCancelable(false)
         }
     }
+
     private fun update_notice() {
         lifecycleScope.launch(Dispatchers.IO) {
             // 后台工作
@@ -260,6 +267,22 @@ class XPlan : AppCompatActivity() {
                     }
                 }
 
+            }
+        }
+    }
+
+    private fun update_config() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            // 后台工作
+            val config = NetUtils.Get("https://itos.codegang.top/share/originplan/app_config.json")
+            // 切换到主线程进行 UI 操作
+            withContext(Dispatchers.Main) {
+                // UI 操作，例如显示 Toast
+                OData.configdata = JSONObject.parseObject(config, ConfigData::class.java)
+                OLog.i(
+                    "系统参数调优配置:",
+                    config + "\n" + OData.configdata.toString()
+                )
             }
         }
     }
@@ -1120,8 +1143,8 @@ class XPlan : AppCompatActivity() {
     }
 
     companion object {
-         @SuppressLint("StaticFieldLeak")
-         lateinit var app: XPlan private set
+        @SuppressLint("StaticFieldLeak")
+        lateinit var app: XPlan private set
     }
 }
 
