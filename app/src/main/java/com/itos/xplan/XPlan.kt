@@ -571,15 +571,8 @@ class XPlan : AppCompatActivity() {
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            OLog.i("重绘", "触发重绘")
-//            if (isInstalled(appInfo.appPkg)) {
-//                appInfo.appName = getAppNameByPackageName(context, appInfo.appPkg)
-//                appInfo.isDisabled = isAppDisabled(appInfo.appPkg)
-//            } else {
-//                appInfo.isExist = false
-//                appInfo.appName = "未安装"
-//            }
-//            val appIcon = getAppIconByPackageName(appInfo.appPkg)
+//            OLog.i("重绘", "触发重绘")
+
             if (appInfo.value.appIcon != null) {
                 Image(
                     painter = rememberDrawablePainter(appInfo.value.appIcon),
@@ -1126,7 +1119,6 @@ class XPlan : AppCompatActivity() {
         return pkglist
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Preview(showBackground = true)
     @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES)
     @Composable
