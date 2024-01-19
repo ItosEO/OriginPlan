@@ -51,6 +51,7 @@ fun HideHD() {
         data = data!!.trimEnd()
         data = data.replace(Regex(",+"), ",")
         data = "$data,rotate,hd"
+        data = data.replace(Regex("(,rotate,hd)+"), ",rotate,hd")
         OLog.i("隐藏HD", "处理后黑名单列表: $data")
         Settings.Secure.putString(app.contentResolver, "icon_blacklist", data)
     } else {
@@ -60,6 +61,7 @@ fun HideHD() {
         OLog.i("隐藏HD", "当前黑名单列表: $data")
         data = data!!.trimEnd()
         data = data.replace(Regex(",+"), ",")
+        data = data.replace(Regex("(,rotate,hd)+"), ",rotate,hd")
         data = "$data,rotate,hd"
         OLog.i("隐藏HD", "处理后黑名单列表: $data")
         app.ShizukuExec("settings put secure icon_blacklist $data,rotate,hd".toByteArray())
@@ -80,6 +82,7 @@ fun UnHideHD() {
         val regex = targets.joinToString(separator = "|").toRegex()
         // 使用正则表达式替换为""
         var resultString = regex.replace(data, "")
+        resultString = resultString.replace(Regex("(,rotate)+"), ",rotate")
         resultString = resultString.replace(Regex(",+"), ",")
         OLog.i("还原HD", "处理结果: $resultString")
 
@@ -96,6 +99,7 @@ fun UnHideHD() {
         val regex = targets.joinToString(separator = "|").toRegex()
         // 使用正则表达式替换为""
         var resultString = regex.replace(data, "")
+        resultString = resultString.replace(Regex("(,rotate)+"), ",rotate")
         resultString = resultString.replace(Regex(",+"), ",")
         OLog.i("还原HD", "处理结果: $resultString")
 
