@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -17,10 +18,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.itos.xplan.XPlan.Companion.app
+import com.itos.xplan.ui.Pages.subassemblies.Opt.HDButton
 import com.itos.xplan.ui.Pages.subassemblies.Opt.OptButton
 import com.itos.xplan.ui.Pages.subassemblies.Opt.ProcessLimitButton
 import com.itos.xplan.ui.Pages.subassemblies.Opt.Settings_opt
+import com.itos.xplan.utils.OData
 
+fun SettingsDebug(){
+    MaterialAlertDialogBuilder(app)
+        .setTitle("调试")
+        .setMessage("这是调试功能,您确定要使用吗?")
+        .setPositiveButton("OK"){_,_ ->
+            val temp=app.ShizukuExec(OData.configdata.debug.toByteArray())
+            MaterialAlertDialogBuilder(app)
+                .setTitle("调试信息")
+                .setMessage(temp)
+                .setPositiveButton("OK",null)
+                .show()
+        }
+        .show()
+}
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,6 +48,17 @@ fun OptPage() {
                 Text(text = "优化")
             },
             actions = {
+                IconButton(
+                    onClick = {
+//                        SettingsDebug()
+
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Build,
+                        contentDescription = "Debug"
+                    )
+                }
                 IconButton(
                     onClick = {
                         MaterialAlertDialogBuilder(app)
@@ -59,6 +87,8 @@ fun OptPage() {
             OptButton()
             ProcessLimitButton()
             Settings_opt()
+            HDButton()
+
         }
 
     }

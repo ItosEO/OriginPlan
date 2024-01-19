@@ -55,14 +55,7 @@ fun SettingsRestore (){
         .setPositiveButton("OK",null)
         .show()
 }
-fun SettingsDebug(){
-    val temp=app.ShizukuExec(OData.configdata.debug.toByteArray())
-    MaterialAlertDialogBuilder(app)
-        .setTitle("调试信息")
-        .setMessage(temp)
-        .setPositiveButton("OK",null)
-        .show()
-}
+
 @Composable
 fun Settings_opt() {
     Row(
@@ -71,19 +64,19 @@ fun Settings_opt() {
     ) {
         FilledTonalButton(
             modifier = Modifier
-                .size(width = 70.dp, height = 60.dp),
+                .size(width = 130.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
                 SettingsOpt()
                 Toast.makeText(app, "开发中...", Toast.LENGTH_SHORT).show()
             }
         ) {
-            Text("系统参数调优", textAlign = TextAlign.Center)
+            Text("系统参数\n调优", textAlign = TextAlign.Center)
         }
         Spacer(modifier = Modifier.width(25.dp))
         FilledTonalButton(
             modifier = Modifier
-                .size(width = 70.dp, height = 60.dp),
+                .size(width = 130.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
                 SettingsRestore()
@@ -92,17 +85,17 @@ fun Settings_opt() {
         ) {
             Text("还原\n系统参数", textAlign = TextAlign.Center)
         }
-        Spacer(modifier = Modifier.width(25.dp))
-        FilledTonalButton(
-            modifier = Modifier
-                .size(width = 70.dp, height = 60.dp),
-            shape = RoundedCornerShape(30),
-            onClick = {
-                SettingsDebug()
-                Toast.makeText(app, "开发中...", Toast.LENGTH_SHORT).show()
-            }
-        ) {
-            Text("调试", textAlign = TextAlign.Center)
-        }
+//        Spacer(modifier = Modifier.width(15.dp))
+//        FilledTonalButton(
+//            modifier = Modifier
+//                .size(width = 80.dp, height = 60.dp),
+//            shape = RoundedCornerShape(30),
+//            onClick = {
+//                SettingsDebug()
+//                Toast.makeText(app, "开发中...", Toast.LENGTH_SHORT).show()
+//            }
+//        ) {
+//            Text("调试", textAlign = TextAlign.Center)
+//        }
     }
 }

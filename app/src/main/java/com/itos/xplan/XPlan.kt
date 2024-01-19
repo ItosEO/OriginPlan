@@ -1137,7 +1137,7 @@ class XPlan : AppCompatActivity() {
                 modifier = Modifier.fillMaxSize(),
                 color = MaterialTheme.colorScheme.background
             ) {
-                AppListContent()
+                OptPage()
             }
         }
     }
