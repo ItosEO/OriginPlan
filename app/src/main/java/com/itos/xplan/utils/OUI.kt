@@ -1,17 +1,13 @@
 package com.itos.xplan.utils
 
-import android.R.attr.data
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.Settings
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat.startForegroundService
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.itos.xplan.XPlan.Companion.app
-import rikka.shizuku.Shizuku
 import java.io.IOException
 
 
@@ -19,26 +15,30 @@ object OUI {
 
     fun check_secure_premission() {
         try {
-            Settings.Global.putInt(app.contentResolver, "test", 1)
+            Settings.Secure.putString(app.contentResolver, "xplan", "test")
             OData.is_have_premissipn = true
         } catch (e: Exception) {
-            OLog.e("权限异常",e)
-//            OShizuku.checkShizuku()
+            OLog.e("写入安全设置权限异常", e)
+            OLog.i("写入安全设置权限异常", "$app.b $app.c")
             if (app.b && app.c) {
-                val p: Process = Shizuku.newProcess(arrayOf("sh"), null, null)
-                val out = p.outputStream
-                out.write(("pm grant com.itos.xplan android.permission.WRITE_SECURE_SETTINGS" + "\nexit\n").toByteArray())
-                out.flush()
-                out.close()
+                val temp = app.ShizukuExec("pm grant com.itos.xplan android.permission.WRITE_SECURE_SETTINGS".toByteArray())
+                if (temp == "") {
+                    OData.is_have_premissipn = true
+                } else {
+                    OData.is_have_premissipn = false
+                    OLog.i("设置 写入安全设置权限异常", temp!!)
+                }
             } else {
                 OShizuku.checkShizuku()
             }
-            OData.is_have_premissipn = false
+
         }
     }
+
     fun openLink(url: String) {
         app.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
+
     fun showImageDialog(imageName: String) {
         val builder: AlertDialog.Builder = MaterialAlertDialogBuilder(app)
 
