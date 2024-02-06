@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -26,7 +25,6 @@ import com.itos.xplan.XPlan.Companion.app
 import com.itos.xplan.ui.Pages.subassemblies.Opt.HDButton
 import com.itos.xplan.ui.Pages.subassemblies.Opt.OptButton
 import com.itos.xplan.ui.Pages.subassemblies.Opt.ProcessLimitButton
-import com.itos.xplan.ui.Pages.subassemblies.Opt.Settings_opt
 import com.itos.xplan.ui.theme.OriginPlanTheme
 import com.itos.xplan.utils.OData
 
@@ -54,17 +52,17 @@ fun OptPage() {
                 Text(text = "优化")
             },
             actions = {
-                IconButton(
-                    onClick = {
-//                        SettingsDebug()
-
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Build,
-                        contentDescription = "Debug"
-                    )
-                }
+//                IconButton(
+//                    onClick = {
+////                        SettingsDebug()
+//
+//                    }
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Outlined.Build,
+//                        contentDescription = "Debug"
+//                    )
+//                }
                 IconButton(
                     onClick = {
                         MaterialAlertDialogBuilder(app)

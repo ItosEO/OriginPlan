@@ -78,7 +78,6 @@ fun HideHD() {
 }
 
 fun UnHideHD() {
-
     OLog.i("还原HD", "Shizuku方案")
 
     var data = app.ShizukuExec("settings get secure icon_blacklist".toByteArray())

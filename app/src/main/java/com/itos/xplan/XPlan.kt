@@ -22,7 +22,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -51,8 +50,6 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -96,6 +93,7 @@ import com.itos.xplan.utils.OShizuku
 import com.itos.xplan.utils.OShizuku.checkShizuku
 import com.itos.xplan.utils.OUI
 import com.itos.xplan.utils.SpUtils
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -118,7 +116,6 @@ class XPlan : AppCompatActivity() {
     var c = false
     var show_notice: String = "暂无公告"
 
-    //    private var FirstTime_pf: SharedPreferences? = null
     private val pkglist = mutableListOf<AppInfo>()
     val optlist = mutableListOf<AppInfo>()
 
@@ -225,9 +222,18 @@ class XPlan : AppCompatActivity() {
     }
 
     private fun update_notice() {
-        lifecycleScope.launch(Dispatchers.IO) {
+        val handler = CoroutineExceptionHandler { _, exception ->
+            // 在这里处理异常，例如打印日志、上报异常等
+            OLog.e("Update Notice Exception:", exception)
+            MaterialAlertDialogBuilder(context)
+                .setTitle("错误")
+                .setMessage("获取云端更新失败\n请检查网络连接")
+                .setPositiveButton("了解",null)
+                .show()
+        }
+        lifecycleScope.launch(Dispatchers.IO + handler) {
             // 后台工作
-            val update = NetUtils.Get("https://itos.codegang.top/share/originplan/app_update.json")
+            val update = NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_update.json")
             // 切换到主线程进行 UI 操作
             withContext(Dispatchers.Main) {
                 // UI 操作，例如显示 Toast
@@ -272,9 +278,16 @@ class XPlan : AppCompatActivity() {
     }
 
     private fun update_config() {
-        lifecycleScope.launch(Dispatchers.IO) {
+        val handler = CoroutineExceptionHandler { _, exception ->
+            // 在这里处理异常，例如打印日志、上报异常等
+            OLog.e("Update Config Exception:", exception)
+            Toast.makeText(context, "获取云端信息失败\n请检查网络连接", Toast.LENGTH_SHORT).show()
+        }
+
+        lifecycleScope.launch(Dispatchers.IO + handler) {
             // 后台工作
-            val config = NetUtils.Get("https://itos.codegang.top/share/originplan/app_config.json")
+            val config = NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_config.json")
+
             // 切换到主线程进行 UI 操作
             withContext(Dispatchers.Main) {
                 // UI 操作，例如显示 Toast
@@ -286,6 +299,7 @@ class XPlan : AppCompatActivity() {
             }
         }
     }
+
 
     private fun onRequestPermissionsResult() {
         checkShizuku()
@@ -820,216 +834,110 @@ class XPlan : AppCompatActivity() {
         Scaffold(
             //设置底部导航栏
             bottomBar = {
-                if (!isLandscapeScreen) {
-                    NavigationBar {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination
-                        NavigationBarItem(
 
-                            icon = {
-                                when (currentDestination?.route) {
-                                    "1" -> {
-                                        // 选中时的图标
-                                        Icon(Icons.Filled.Settings, contentDescription = null)
-                                    }
+                NavigationBar {
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentDestination = navBackStackEntry?.destination
+                    NavigationBarItem(
 
-                                    else -> {
-                                        // 未选中时的图标
-                                        Icon(Icons.Outlined.Settings, contentDescription = null)
-                                    }
+                        icon = {
+                            when (currentDestination?.route) {
+                                "1" -> {
+                                    // 选中时的图标
+                                    Icon(Icons.Filled.Settings, contentDescription = null)
                                 }
-                            },
-                            label = {
-                                Text(
-                                    text = "Optimization"
-//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
-                                )
-                            },
-                            selected = currentDestination?.route == "1",
-                            alwaysShowLabel = false,
-                            onClick = {
-                                navController.navigate("1") {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+
+                                else -> {
+                                    // 未选中时的图标
+                                    Icon(Icons.Outlined.Settings, contentDescription = null)
                                 }
                             }
-                        )
-                        NavigationBarItem(
-                            icon = {
-                                when (currentDestination?.route) {
-                                    "2" -> {
-                                        // 选中时的图标
-                                        Icon(Icons.Filled.Create, contentDescription = null)
-                                    }
-
-                                    else -> {
-                                        // 未选中时的图标
-                                        Icon(Icons.Outlined.Create, contentDescription = null)
-                                    }
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = "Details",
+                        },
+                        label = {
+                            Text(
+                                text = "Optimization"
 //                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
-                                )
-                            },
-                            selected = currentDestination?.route == "2",
-                            alwaysShowLabel = false,
-                            onClick = {
-                                navController.navigate("2") {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                            )
+                        },
+                        selected = currentDestination?.route == "1",
+                        alwaysShowLabel = false,
+                        onClick = {
+                            navController.navigate("1") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                    NavigationBarItem(
+                        icon = {
+                            when (currentDestination?.route) {
+                                "2" -> {
+                                    // 选中时的图标
+                                    Icon(Icons.Filled.Create, contentDescription = null)
+                                }
+
+                                else -> {
+                                    // 未选中时的图标
+                                    Icon(Icons.Outlined.Create, contentDescription = null)
                                 }
                             }
-                        )
-                        NavigationBarItem(
-                            icon = {
-                                when (currentDestination?.route) {
-                                    "3" -> {
-                                        // 选中时的图标
-                                        Icon(Icons.Filled.Info, contentDescription = null)
-                                    }
-
-                                    else -> {
-                                        // 未选中时的图标
-                                        Icon(Icons.Outlined.Info, contentDescription = null)
-                                    }
+                        },
+                        label = {
+                            Text(
+                                text = "Details",
+//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
+                            )
+                        },
+                        selected = currentDestination?.route == "2",
+                        alwaysShowLabel = false,
+                        onClick = {
+                            navController.navigate("2") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
                                 }
-                            },
-                            label = {
-                                Text(
-                                    text = "About",
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
+                    NavigationBarItem(
+                        icon = {
+                            when (currentDestination?.route) {
+                                "3" -> {
+                                    // 选中时的图标
+                                    Icon(Icons.Filled.Info, contentDescription = null)
+                                }
+
+                                else -> {
+                                    // 未选中时的图标
+                                    Icon(Icons.Outlined.Info, contentDescription = null)
+                                }
+                            }
+                        },
+                        label = {
+                            Text(
+                                text = "About",
 //                                modifier = Modifier.alpha(if (currentDestination?.route == "About") 1f else 0f)
-                                )
-                            },
-                            selected = currentDestination?.route == "3",
-                            alwaysShowLabel = false,
-                            onClick = {
-                                navController.navigate("3") {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
+                            )
+                        },
+                        selected = currentDestination?.route == "3",
+                        alwaysShowLabel = false,
+                        onClick = {
+                            navController.navigate("3") {
+                                popUpTo(navController.graph.startDestinationId) {
+                                    saveState = true
                                 }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                        )
-                    }
-
-                } else {
-                    NavigationRail {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentDestination = navBackStackEntry?.destination
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                        )
-                        NavigationRailItem(
-
-                            icon = {
-                                when (currentDestination?.route) {
-                                    "1" -> {
-                                        // 选中时的图标
-                                        Icon(Icons.Filled.Settings, contentDescription = null)
-                                    }
-
-                                    else -> {
-                                        // 未选中时的图标
-                                        Icon(Icons.Outlined.Settings, contentDescription = null)
-                                    }
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = "Optimization"
-//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
-                                )
-                            },
-                            selected = currentDestination?.route == "1",
-                            alwaysShowLabel = false,
-                            onClick = {
-                                navController.navigate("1") {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                        NavigationRailItem(
-                            icon = {
-                                when (currentDestination?.route) {
-                                    "2" -> {
-                                        // 选中时的图标
-                                        Icon(Icons.Filled.Create, contentDescription = null)
-                                    }
-
-                                    else -> {
-                                        // 未选中时的图标
-                                        Icon(Icons.Outlined.Create, contentDescription = null)
-                                    }
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = "Details",
-//                                modifier = Modifier.alpha(if (currentDestination?.route == "Details") 1f else 0f)
-                                )
-                            },
-                            selected = currentDestination?.route == "2",
-                            alwaysShowLabel = false,
-                            onClick = {
-                                navController.navigate("2") {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                        NavigationRailItem(
-                            icon = {
-                                when (currentDestination?.route) {
-                                    "3" -> {
-                                        // 选中时的图标
-                                        Icon(Icons.Filled.Info, contentDescription = null)
-                                    }
-
-                                    else -> {
-                                        // 未选中时的图标
-                                        Icon(Icons.Outlined.Info, contentDescription = null)
-                                    }
-                                }
-                            },
-                            label = {
-                                Text(
-                                    text = "About",
-//                                modifier = Modifier.alpha(if (currentDestination?.route == "About") 1f else 0f)
-                                )
-                            },
-                            selected = currentDestination?.route == "3",
-                            alwaysShowLabel = false,
-                            onClick = {
-                                navController.navigate("3") {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
-                            }
-                        )
-                    }
+                        }
+                    )
                 }
+
+
             }
 
         ) {
@@ -1038,46 +946,16 @@ class XPlan : AppCompatActivity() {
                     .fillMaxSize()
                     .padding(bottom = it.calculateBottomPadding()) // 添加 padding,防止遮挡内容
             ) {
-                if (isLandscapeScreen) {
-//                    OLog.i("界面","绘制横屏判断完成")
-//                    Row(
-//                        modifier = Modifier
-//                            .fillMaxSize()
-//                            .padding(start = 72.dp)
-//                    ) {
-//                        // 在这里放置你的内容
-//                        NavHost(
-//                            navController = navController,
-//                            startDestination = "1"
-//                        ) {
-//                            OLog.i("界面","绘制横屏开始")
-//                            composable("2") { Details() }
-//                            composable("3") { About() }
-//                            composable("1") { Opt() }
-//                            // 添加其他页面的 composable 函数，类似上面的示例
-//                        }
-//                    }
-                    NavHost(
-                        navController = navController,
-                        startDestination = "1"
-                    ) {
-                        OLog.i("界面", "绘制横屏开始")
-                        composable("2") { Details() }
-                        composable("3") { AboutPage() }
-                        composable("1") { OptPage() }
-                        // 添加其他页面的 composable 函数，类似上面的示例
-                    }
-                } else {
 
-                    NavHost(
-                        navController = navController,
-                        startDestination = "1"
-                    ) {
-                        composable("2") { Details() }
-                        composable("3") { AboutPage() }
-                        composable("1") { OptPage() }
-                        // 添加其他页面的 composable 函数，类似上面的示例
-                    }
+                NavHost(
+                    navController = navController,
+                    startDestination = "1"
+                ) {
+                    OLog.i("界面", "绘制横屏开始")
+                    composable("2") { Details() }
+                    composable("3") { AboutPage() }
+                    composable("1") { OptPage() }
+                    // 添加其他页面的 composable 函数，类似上面的示例
                 }
             }
         }
