@@ -43,7 +43,7 @@ fun OptButton(){
 }
 
 fun opt_setappstauts(status: Boolean) {
-    if (app.b && app.c) {
+    if (app.isShizukuStart && app.isShizukuAuthorized) {
         app.generateAppList(app)
         // 遍历app list
         for (appInfo in app.optlist) {

@@ -13,6 +13,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.util.Log
 import android.widget.EditText
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -83,6 +84,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.xplan.datatype.AppInfo
 import com.itos.xplan.datatype.ConfigData
+import com.itos.xplan.ui.Pages.OptPage
 import com.itos.xplan.ui.theme.OriginPlanTheme
 import com.itos.xplan.utils.NetUtils
 import com.itos.xplan.utils.OData
@@ -93,6 +95,7 @@ import com.itos.xplan.utils.OShizuku
 import com.itos.xplan.utils.OShizuku.checkShizuku
 import com.itos.xplan.utils.OUI
 import com.itos.xplan.utils.SpUtils
+import com.itos.xplan.utils.SystemPropertiesProxy
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -109,11 +112,11 @@ import java.io.OutputStream
 class XPlan : AppCompatActivity() {
     val context: Context = this
     var ReturnValue = 0
-    var br = false
+    var isRunner = false
     var h2: Thread? = null
     var h3: Thread? = null
-    var b = true
-    var c = false
+    var isShizukuStart = true
+    var isShizukuAuthorized = false
     var show_notice: String = "暂无公告"
 
     private val pkglist = mutableListOf<AppInfo>()
@@ -169,6 +172,7 @@ class XPlan : AppCompatActivity() {
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
         guide()
         generateAppList(context)
+        registerUser()
         update_notice()
         update_config()
     }
@@ -228,12 +232,13 @@ class XPlan : AppCompatActivity() {
             MaterialAlertDialogBuilder(context)
                 .setTitle("错误")
                 .setMessage("获取云端更新失败\n请检查网络连接")
-                .setPositiveButton("了解",null)
+                .setPositiveButton("了解", null)
                 .show()
         }
         lifecycleScope.launch(Dispatchers.IO + handler) {
             // 后台工作
-            val update = NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_update.json")
+            val update =
+                NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_update.json")
             // 切换到主线程进行 UI 操作
             withContext(Dispatchers.Main) {
                 // UI 操作，例如显示 Toast
@@ -281,12 +286,12 @@ class XPlan : AppCompatActivity() {
         val handler = CoroutineExceptionHandler { _, exception ->
             // 在这里处理异常，例如打印日志、上报异常等
             OLog.e("Update Config Exception:", exception)
-            Toast.makeText(context, "获取云端信息失败\n请检查网络连接", Toast.LENGTH_SHORT).show()
         }
 
         lifecycleScope.launch(Dispatchers.IO + handler) {
             // 后台工作
-            val config = NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_config.json")
+            val config =
+                NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_config.json")
 
             // 切换到主线程进行 UI 操作
             withContext(Dispatchers.Main) {
@@ -310,6 +315,50 @@ class XPlan : AppCompatActivity() {
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
+    }
+
+    private fun registerUser() {
+        checkShizuku()
+        var os = ""
+        var deviceId = ""
+        var device_model = ""
+        Log.d("登记用户", "$isShizukuStart $isShizukuAuthorized")
+        try {
+//                os = ShizukuExec("getprop ro.vivo.os.build.display.id".getBytes()).trim();
+//                device_model = ShizukuExec("getprop ro.vivo.internet.name".getBytes()).trim();
+//                system_version = ShizukuExec("getprop ro.vivo.os.build.display.id".getBytes()).trim();
+//                deviceId = ShizukuExec("getprop ro.serialno".getBytes()).trim() + "_" + android.os.Build.DEVICE;
+            os = SystemPropertiesProxy.get(context, "ro.vivo.os.build.display.id").trim()
+            device_model = SystemPropertiesProxy.get(context, "ro.vivo.internet.name").trim()
+            deviceId = SystemPropertiesProxy.get(context, "ro.serialno") + "_" + Build.DEVICE
+            if (deviceId == "_" + Build.DEVICE) {
+                val sn = ShizukuExec("getprop ro.serialno".toByteArray())?.trim()
+                if (sn == "Shizuku 状态异常") {
+                    Log.d("登记用户-error", "Shizuku 状态异常")
+                    return
+                }
+                deviceId = sn + "_" + Build.DEVICE;
+            }
+            Log.d("登记用户", "$os $device_model $deviceId")
+        } catch (e: java.lang.Exception) {
+            Toast.makeText(this, "[反射异常]", Toast.LENGTH_SHORT).show()
+            Log.d("登记用户-error", e.toString())
+        }
+        val finalDeviceId = deviceId
+        val finalDevice_model = device_model
+        val finalOs = os
+        Log.d("登记用户", "$finalOs $finalDevice_model")
+        lifecycleScope.launch(Dispatchers.IO) {
+            // 后台工作
+            Log.d(
+                "登记用户-请求url",
+                "http://cloud.itos.codegang.top:44553/xplan/originos/reg_user/?deviceid=$deviceId&device_model=$device_model&os=$os&soc=${Build.BOARD}&t=" + System.currentTimeMillis() / 1000
+            )
+            val temp: String =
+                NetUtils.Get("http://cloud.itos.codegang.top:44553/xplan/originos/reg_user/?deviceid=$deviceId&device_model=$device_model&os=$os&soc=${Build.BOARD}&t=" + System.currentTimeMillis() / 1000)
+            Log.d("登记用户-返回", temp)
+        }
+
     }
 
     private fun uninstall(appInfo: AppInfo, a: RecomposeScope) {
@@ -420,14 +469,14 @@ class XPlan : AppCompatActivity() {
     }
 
     fun ShizukuExec(cmd: ByteArray): String? {
-        if (br) {
+        if (isRunner) {
             return "正在执行其他操作"
         }
-        if (!b || !c) {
+        if (!isShizukuStart || !isShizukuAuthorized) {
             Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
             return "Shizuku 状态异常"
         }
-        br = true
+        isRunner = true
 
         val p: ShizukuRemoteProcess
         val op = arrayOfNulls<String>(1)
@@ -476,7 +525,7 @@ class XPlan : AppCompatActivity() {
             ReturnValue = p.exitValue()
             OLog.i("运行shell", "跑完了")
             p.destroyForcibly()
-            br = false
+            isRunner = false
 
             return op[0]
         } catch (ignored: java.lang.Exception) {

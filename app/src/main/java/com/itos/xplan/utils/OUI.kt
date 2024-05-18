@@ -20,7 +20,7 @@ object OUI {
         } catch (e: Exception) {
             OLog.e("写入安全设置权限异常", e)
             OLog.i("写入安全设置权限异常", "$app.b $app.c")
-            if (app.b && app.c) {
+            if (app.isShizukuStart && app.isShizukuAuthorized) {
                 val temp = app.ShizukuExec("pm grant com.itos.xplan android.permission.WRITE_SECURE_SETTINGS".toByteArray())
                 if (temp == "") {
                     OData.is_have_premissipn = true

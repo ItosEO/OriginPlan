@@ -110,18 +110,18 @@ object OShizuku {
         try {
             if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) Shizuku.requestPermission(
                 0
-            ) else app.c = true
+            ) else app.isShizukuAuthorized = true
         } catch (e: java.lang.Exception) {
-            if (app.checkSelfPermission("moe.shizuku.manager.permission.API_V23") == PackageManager.PERMISSION_GRANTED) app.c =
+            if (app.checkSelfPermission("moe.shizuku.manager.permission.API_V23") == PackageManager.PERMISSION_GRANTED) app.isShizukuAuthorized =
                 true
             if (e.javaClass == IllegalStateException::class.java) {
-                app.b = false
+                app.isShizukuStart = false
             }
         }
-        if (!app.b || !app.c) {
+        if (!app.isShizukuStart || !app.isShizukuAuthorized) {
             Toast.makeText(
                 app,
-                "Shizuku " + (if (app.b) "已运行" else "未运行") + if (app.c) " 已授权" else " 未授权",
+                "Shizuku " + (if (app.isShizukuStart) "已运行" else "未运行") + if (app.isShizukuAuthorized) " 已授权" else " 未授权",
                 Toast.LENGTH_LONG
             ).show()
         }

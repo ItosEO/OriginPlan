@@ -17,6 +17,7 @@
         android:roundIcon="@mipmap/ic_launcher_xplan_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.OriginPlan"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:screenOrientation="portrait"
         tools:targetApi="34">
         <activity
@@ -29,6 +30,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".crashcatch.LogViewerActivity"
+            android:exported="false" />
+
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
