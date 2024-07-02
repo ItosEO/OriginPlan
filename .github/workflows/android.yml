@@ -63,7 +63,7 @@ jobs:
       - name: Get versionName from Android app
         id: get_version
         run: |
-          VERSION_NAME=$(awk -F'"' '/versionName/ {print $2}' app/build.gradle.kts)
+          VERSION_NAME=$(awk -F'"' '/versionName/ {print $2}' app/build.gradle.kts | xargs)
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           echo "Version Name: $VERSION_NAME"
 
