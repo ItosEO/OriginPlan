@@ -47,20 +47,18 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease
 
-      - name: Display APK information
+      - name: Find and set APK path
+        id: find_apk
         run: |
-          echo "Listing contents of build/outputs/apk/release directory:"
-          ls -R app/build/outputs/apk/release
-          APK_PATH=$(find app/build/outputs/apk/release -name 'XPlan_v*.apk')
+          APK_PATH=$(find app/build/outputs/apk/release -name 'XPlan*.apk' | head -n 1)
           echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
-          echo "Found APK at: $APK_PATH"
+          echo "::set-output name=apk_path::$APK_PATH"
           ls -lh $APK_PATH
-        id: apk_info
 
       - name: Sign APK with Keystore
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_FILE }}" | base64 -d > keystore.jks
-          $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in ${{ steps.apk_info.outputs.APK_PATH }}
+          $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in ${{ steps.find_apk.outputs.apk_path }}
 
       - name: Get versionName from Android app
         id: get_version
@@ -73,4 +71,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: XPlan-APK
-          path: ${{ steps.apk_info.outputs.APK_PATH }}
+          path: ${{ steps.find_apk.outputs.apk_path }}
