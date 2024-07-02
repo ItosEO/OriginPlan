@@ -49,8 +49,11 @@ jobs:
 
       - name: Display APK information
         run: |
+          echo "Listing contents of build/outputs/apk/release directory:"
+          ls -R app/build/outputs/apk/release
           APK_PATH=$(find app/build/outputs/apk/release -name 'XPlan_v*.apk')
           echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          echo "Found APK at: $APK_PATH"
           ls -lh $APK_PATH
         id: apk_info
 
@@ -62,7 +65,7 @@ jobs:
       - name: Get versionName from Android app
         id: get_version
         run: |
-          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle)
+          VERSION_NAME=$(grep -oP 'versionName "\K[^"]+' app/build.gradle.kts)
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           echo "Version Name: $VERSION_NAME"
 
