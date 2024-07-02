@@ -67,8 +67,11 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           echo "Version Name: $VERSION_NAME"
 
-      - name: Upload APK artifact
+      - name: Rename and Upload APK artifact
+        run: |
+          NEW_APK_NAME="XPlan_${{ env.VERSION_NAME }}.apk"
+          cp "${{ steps.find_apk.outputs.apk_path }}" "./${NEW_APK_NAME}"
         uses: actions/upload-artifact@v3
         with:
-          name: XPlan-APK
-          path: ${{ steps.find_apk.outputs.apk_path }}
+          name: XPlan-${{ env.VERSION_NAME }}
+          path: ./${{ env.VERSION_NAME }}.apk
