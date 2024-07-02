@@ -47,11 +47,17 @@ jobs:
           chmod +x ./gradlew
           ./gradlew assembleRelease
 
+      - name: Display APK information
+        run: |
+          APK_PATH=$(find app/build/outputs/apk/release -name 'XPlan_v*.apk')
+          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
+          ls -lh $APK_PATH
+        id: apk_info
+
       - name: Sign APK with Keystore
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_FILE }}" | base64 -d > keystore.jks
-          ./gradlew signingConfigWriterRelease
-          $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in app/build/outputs/apk/release/XPlan_v*.apk
+          $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in ${{ steps.apk_info.outputs.APK_PATH }}
 
       - name: Get versionName from Android app
         id: get_version
@@ -60,16 +66,8 @@ jobs:
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           echo "Version Name: $VERSION_NAME"
 
-      - name: Display APK information
-        run: |
-          APK_PATH=$(find app/build/outputs/apk/release -name 'XPlan_v*.apk')
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
-          ls -lh $APK_PATH
-        id: apk_info
-        continue-on-error: true
-
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: DeviceOptimizeHelper-APK
-          path: ${{ env.APK_PATH }}
+          name: XPlan-APK
+          path: ${{ steps.apk_info.outputs.APK_PATH }}
