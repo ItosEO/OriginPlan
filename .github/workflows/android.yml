@@ -1,4 +1,3 @@
-
 name: Android CI
 
 on:
@@ -62,8 +61,22 @@ jobs:
           VERSION_NAME=$(awk -F'"' '/versionName/ {print $2}' app/build.gradle.kts | xargs)
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
           echo "Version Name: $VERSION_NAME"
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: XPlan-APK
-          path: ${{ steps.find_apk.outputs.apk_path }}
+          tag_name: v${{ steps.get_version.outputs.VERSION_NAME }}
+          release_name: Release ${{ steps.get_version.outputs.VERSION_NAME }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_apk.outputs.apk_path }}
+          asset_name: XPlan_${{ steps.get_version.outputs.VERSION_NAME }}.apk
+          asset_content_type: application/vnd.android.package-archive
