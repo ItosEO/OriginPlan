@@ -55,15 +55,17 @@ jobs:
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_FILE }}" | base64 -d > keystore.jks
           $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in "${{ steps.find_apk.outputs.apk_path }}"
-      - name: Get versionName from Android app
+      - name: Get version information from Android app
         id: get_version
         run: |
+          VERSION_CODE=$(awk -F' ' '/versionCode/ {print $2}' app/build.gradle.kts | xargs)
           VERSION_NAME=$(awk -F'"' '/versionName/ {print $2}' app/build.gradle.kts | xargs)
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "::set-output name=version_code::$VERSION_CODE"
           echo "::set-output name=version_name::$VERSION_NAME"
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: XPlan-${{ steps.get_version.outputs.version_name }}
+          name: XPlan-${{ steps.get_version.outputs.version_code }}-${{ steps.get_version.outputs.version_name }}
           path: ${{ steps.find_apk.outputs.apk_path }}
