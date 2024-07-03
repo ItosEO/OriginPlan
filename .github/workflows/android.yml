@@ -49,6 +49,7 @@ jobs:
           sed -i 's/org.gradle.configuration-cache=true//g' gradle.properties
           echo 'buildCache { local { removeUnusedEntriesAfterDays = 1 } }' >> settings.gradle.kts
           echo "${{ secrets.SIGN_KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+          chmod +x gradlew
           ./gradlew assembleRelease
           ccache -s
 
