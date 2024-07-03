@@ -11,6 +11,8 @@ on:
       - '.github/**'
       - '.idea/**'
       - '!.github/workflows/**'
+      - '**.yml'
+
 
 jobs:
   build:
