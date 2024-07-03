@@ -8,7 +8,7 @@ android {
     compileSdk = 34
     applicationVariants.all {
         outputs.all {
-            val ver = defaultConfig.versionName+"(${defaultConfig.versionCode})"
+            val ver = defaultConfig.versionName+"-${defaultConfig.versionCode}"
 
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
                 "XPlan_$ver.apk"
