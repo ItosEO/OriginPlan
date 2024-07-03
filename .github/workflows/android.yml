@@ -70,12 +70,11 @@ jobs:
       - name: Rename APK
         run: |
           NEW_APK_NAME="XPlan_${{ env.VERSION_NAME }}.apk"
-          mv "${{ steps.find_apk.outputs.apk_path }}" "./${NEW_APK_NAME}"
+          cp "${{ steps.find_apk.outputs.apk_path }}" "./${NEW_APK_NAME}"
           echo "NEW_APK_NAME=${NEW_APK_NAME}" >> $GITHUB_ENV
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: XPlan-${{ env.VERSION_NAME }}
+          name: XPlan_${{ env.VERSION_NAME }}.apk
           path: ./${{ env.NEW_APK_NAME }}
-          if-no-files-found: warn
