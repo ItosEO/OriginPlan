@@ -60,21 +60,24 @@ jobs:
           echo "${{ secrets.RELEASE_KEYSTORE_FILE }}" | base64 -d > keystore.jks
           $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in "${{ steps.find_apk.outputs.apk_path }}"
 
-      - name: Get versionName from Android app
+      - name: Get versionCode and versionName from Android app
         id: get_version
         run: |
+          VERSION_CODE=$(awk -F'[^0-9]*' '/versionCode/ {print $2}' app/build.gradle.kts | xargs)
           VERSION_NAME=$(awk -F'"' '/versionName/ {print $2}' app/build.gradle.kts | xargs)
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+          echo "Version Code: $VERSION_CODE"
           echo "Version Name: $VERSION_NAME"
 
       - name: Rename APK
         run: |
-          NEW_APK_NAME="XPlan_${{ env.VERSION_NAME }}.apk"
+          NEW_APK_NAME="XPlan_${{ env.VERSION_NAME }}(${ env.VERSION_CODE }).apk"
           cp "${{ steps.find_apk.outputs.apk_path }}" "./${NEW_APK_NAME}"
           echo "NEW_APK_NAME=${NEW_APK_NAME}" >> $GITHUB_ENV
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: XPlan_${{ env.VERSION_NAME }}.apk
+          name: ${{ env.NEW_APK_NAME }}
           path: ./${{ env.NEW_APK_NAME }}
