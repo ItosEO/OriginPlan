@@ -42,42 +42,45 @@ jobs:
           echo "ANDROID_SDK_ROOT=/usr/local/lib/android/sdk" >> $GITHUB_ENV
           echo "PATH=$PATH:/usr/local/lib/android/sdk/cmdline-tools/latest/bin:/usr/local/lib/android/sdk/platform-tools" >> $GITHUB_ENV
 
-      - name: Build APK
+      - name: Build with Gradle
         run: |
-          chmod +x ./gradlew
+          echo 'org.gradle.parallel=true' >> gradle.properties
+          echo 'org.gradle.vfs.watch=true' >> gradle.properties
+          sed -i 's/org.gradle.configuration-cache=true//g' gradle.properties
+          echo 'buildCache { local { removeUnusedEntriesAfterDays = 1 } }' >> settings.gradle.kts
+          echo "${{ secrets.SIGN_KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
           ./gradlew assembleRelease
+          ccache -s
 
       - name: Find and set APK path
         id: find_apk
         run: |
-          APK_PATH=$(find app/build/outputs/apk/release -name 'XPlan_*.apk' | head -n 1)
-          echo "APK_PATH=$APK_PATH" >> $GITHUB_ENV
-          echo "::set-output name=apk_path::$APK_PATH"
-          ls -lh "$APK_PATH"
+          APK_FILE=$(find app/build/outputs/apk/release -name 'XPlan*.apk' | head -n 1)
+          echo "APK_PATH=$APK_FILE" >> $GITHUB_ENV
+          echo "::set-output name=apk_path::$APK_FILE"
+          ls -lh "$APK_FILE"
 
       - name: Sign APK with Keystore
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_FILE }}" | base64 -d > keystore.jks
           $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in "${{ steps.find_apk.outputs.apk_path }}"
 
-      - name: Get versionCode and versionName from Android app
+      - name: Get versionName from Android app
         id: get_version
         run: |
-          VERSION_CODE=$(awk -F'[^0-9]*' '/versionCode/ {print $2}' app/build.gradle.kts | xargs)
           VERSION_NAME=$(awk -F'"' '/versionName/ {print $2}' app/build.gradle.kts | xargs)
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
           echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
-          echo "Version Code: $VERSION_CODE"
           echo "Version Name: $VERSION_NAME"
 
-      - name: Rename APK
+      - name: Show Artifacts SHA256
         run: |
-          NEW_APK_NAME="XPlan_${{ env.VERSION_NAME }}(${ env.VERSION_CODE }).apk"
-          cp "${{ steps.find_apk.outputs.apk_path }}" "./${NEW_APK_NAME}"
-          echo "NEW_APK_NAME=${NEW_APK_NAME}" >> $GITHUB_ENV
+          echo "### Build Success :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "|ABI|SHA256|" >> $GITHUB_STEP_SUMMARY
+          echo "|:--------:|:----------|" >> $GITHUB_STEP_SUMMARY
+          echo "|arm32|$(sha256sum ${{ steps.find_apk.outputs.apk_path }} | cut -d ' ' -f 1)" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.NEW_APK_NAME }}
-          path: ./${{ env.NEW_APK_NAME }}
+          name: XPlan_${{ steps.get_version.outputs.VERSION_NAME }}.apk
+          path: ${{ steps.find_apk.outputs.apk_path }}
