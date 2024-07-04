@@ -20,6 +20,8 @@ jobs:
       CCACHE_NOHASHDIR: "true"
       CCACHE_HARDLINK: "true"
       CCACHE_BASEDIR: "${{ github.workspace }}"
+      RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
     if: ${{ !startsWith(github.event.head_commit.message, '[skip ci]') }} && success() && github.ref == 'refs/heads/main' }}
 
     steps:
@@ -83,13 +85,12 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        
 
       - name: Sign APK with Keystore
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_FILE }}" | base64 -d > keystore.jks
-          $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}D --key-pass  ${{ secrets.RELEASE_KEY_PASSWORD }} --in "${{ env.APK_FILE_PATH }}"
+          $ANDROID_HOME/build-tools/31.0.0/apksigner sign --ks keystore.jks --ks-key-alias ${{ secrets.RELEASE_KEY_ALIAS }} --ks-pass env:RELEASE_KEYSTORE_PASSWORD --key-pass env:RELEASE_KEY_PASSWORD --in "${{ env.APK_FILE_PATH }}"
 
       - name: Show Artifacts SHA256
         run: |
