@@ -1,4 +1,3 @@
-
 name: main
 
 on:
@@ -11,8 +10,6 @@ on:
       - '.github/**'
       - '.idea/**'
       - '!.github/workflows/**'
-      - '**.yml'
-
 
 jobs:
   build:
@@ -63,7 +60,6 @@ jobs:
           restore-keys: native-cache-
 
       - name: Setup Gradle
-        # uses: gradle/gradle-build-action@v3.4.1
         uses: gradle/actions/setup-gradle@v3
 
       - name: Build with Gradle
@@ -81,14 +77,14 @@ jobs:
           echo "APK_FILE_PATH=$APK_FILE_PATH" >> $GITHUB_ENV
           echo "FILE_NAME=$FILE_NAME" >> $GITHUB_ENV
 
-      
         env:
           KEYSTORE_PATH: "../keystore.jks"
           KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
-      - uses: r0adkll/sign-android-release@v1
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
         id: sign_app
         with:
           releaseDirectory: app/build/outputs/apk/release
@@ -102,11 +98,11 @@ jobs:
           echo "### Build Success :rocket:" >> $GITHUB_STEP_SUMMARY
           echo "|File|SHA256|" >> $GITHUB_STEP_SUMMARY
           echo "|:--------:|:----------|" >> $GITHUB_STEP_SUMMARY
-          arm32=($(sha256sum ${{ env.APK_FILE_ARM32 }}))
+          arm32=($(sha256sum ${{ steps.sign_app.outputs.signedReleaseFile0 }}))
           echo "|${{ env.FILE_NAME}}|$arm32" >> $GITHUB_STEP_SUMMARY
           
-      - name: Upload Artifacts(arm32)
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          path: ${{ env.APK_FILE_PATH }}
+          path: ${{ steps.sign_app.outputs.signedReleaseFile0 }}
           name: ${{ env.FILE_NAME}}
