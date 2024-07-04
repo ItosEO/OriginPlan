@@ -101,7 +101,7 @@ jobs:
         with:
           path: ${{ env.APK_FILE_PATH }}
           name: ${{ env.FILE_NAME }}
-      
+          
   release:
     # if: startsWith(github.ref, 'refs/tags/v')
     needs: build
@@ -109,11 +109,23 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - name: Get Release upload URL
+        id: get_release_upload_url
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: context.ref.replace('refs/tags/', '')
+            });
+            core.setOutput('upload_url', release.data.upload_url);
 
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
         with:
-          upload_url: ${{ github.event.release.upload_url }}
+          upload_url: ${{ steps.get_release_upload_url.outputs.upload_url }}
           asset_path: ${{ needs.build.outputs.APK_FILE_PATH }}
           asset_name: ${{ needs.build.outputs.FILE_NAME }}
           asset_content_type: application/vnd.android.package-archive
