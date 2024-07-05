@@ -139,9 +139,10 @@ jobs:
           echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
 
           APK_FILE_PATH_2=$(find -name '*.apk')
-          FILE_NAME_2=$(basename "$APK_FILE_PATH")
-          echo "APK_FILE_PATH=$APK_FILE_PATH_2" >> $GITHUB_ENV
-          echo "FILE_NAME=$FILE_NAME_2" >> $GITHUB_ENV
+          echo $APK_FILE_PATH_2
+          FILE_NAME_2=$(basename "$APK_FILE_PATH_2")
+          echo "APK_FILE_PATH_2=$APK_FILE_PATH_2" >> $GITHUB_ENV
+          echo "FILE_NAME_2=$FILE_NAME_2" >> $GITHUB_ENV
 
       - name: release
         uses: softprops/action-gh-release@v2
@@ -149,5 +150,5 @@ jobs:
         with:
           token: ${{ secrets.g_TOKEN}}
           tag_name: "12313"
-          files: ${{ env.APK_FILE_PATH }}
+          files: ${{ env.APK_FILE_PATH2 }}
           
