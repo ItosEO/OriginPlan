@@ -112,24 +112,23 @@ jobs:
         uses: actions/download-artifact@v4
       - name: Display structure of downloaded files
         run: ls -R
-      - name: Zip Apk
-        run: |
-          for dir in XP*; do
-            if [ -d "$dir" ]; then
-              echo "----- Zip $dir -----"
-              (cd $dir && unzip "$dir".zip && find . -name "*.apk" -exec mv {} .. \;)
-            fi
-          done
+      # - name: Zip Apk
+      #   run: |
+      #     for dir in XP*; do
+      #       if [ -d "$dir" ]; then
+      #         echo "----- Zip $dir -----"
+      #         (cd $dir && unzip "$dir".zip && find . -name "*.apk" -exec mv {} .. \;)
+      #       fi
+      #     done
       - name: Display structure of downloaded files
-        run: ls -R
+        run: ls -a
       - name: Extract tag name
         id: extract_tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Create Release
-        uses: ncipollo/release-action@v1
+      - name: release
+        uses: softprops/action-gh-release@v2
         with:
-          tag: 233
-          artifacts: ${{ env.FILE_NAME }}
-          token: ${{ secrets.g_TOKEN }}
-          generateReleaseNotes: true
+          files: |
+            *.apk
+          
