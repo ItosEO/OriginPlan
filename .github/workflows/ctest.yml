@@ -105,9 +105,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           path: ${{ env.APK_FILE_PATH }}
-          name: ${{ env.FILE_NAME }}
-  
- 
+          name: ${{ env.FILE_NAME }} 
         
   release:
     needs: build
@@ -142,5 +140,5 @@ jobs:
           token: ${{ secrets.g_TOKEN}}
           tag_name: "12313"
           files: |
-            ${{ env.APK_FILE_PATH }}
+            *.apk
           
