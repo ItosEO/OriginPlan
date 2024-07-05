@@ -5,7 +5,7 @@ on:
   push:
     branches: [ master ]
     tags:
-      - '*'
+      - 'v*'
     paths-ignore:
       - '**.md'
       - '**.txt'
@@ -83,6 +83,9 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        outputs:
+          apk_file_path: ${{ env.APK_FILE_PATH }}
+          file_name: ${{ env.FILE_NAME }}
         
       - name: Sign APK with Keystore
         run: |
@@ -101,20 +104,15 @@ jobs:
         with:
           path: ${{ env.APK_FILE_PATH }}
           name: ${{ env.FILE_NAME }}
-
+          
   release:
+    # if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: Download Build Artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: ${{ env.FILE_NAME }}
-          path: .
-
       - name: Extract tag name
         id: extract_tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
@@ -122,7 +120,7 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
-          tag: "2322"
-          artifacts: ${{ env.FILE_NAME }}
+          tag: ${{ env.TAG_NAME }}
+          artifacts: ${{ needs.build.outputs.apk_file_path }}
           token: ${{ secrets.g_TOKEN }}
           generateReleaseNotes: true
