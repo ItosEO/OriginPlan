@@ -109,23 +109,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        
-      - name: Get Release upload URL
-        id: get_release_upload_url
-        uses: actions/github-script@v6
+      - name: up
+        uses: ncipollo/release-action@v1
         with:
-          script: |
-            const release = await github.rest.repos.getReleaseByTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: context.ref.replace('refs/tags/', '')
-            });
-            core.setOutput('upload_url', release.data.upload_url);
-
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.get_release_upload_url.outputs.upload_url }}
-          asset_path: ${{ env.APK_FILE_PATH }}
-          asset_name: ${{ env.FILE_NAME }}
-          asset_content_type: application/vnd.android.package-archive
+          artifacts: "*.apk"
+          token: ${{ github.token }}
+          generateReleaseNotes: true
