@@ -110,7 +110,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: Get tag name
+      - name: Extract tag name
         id: extract_tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
@@ -118,6 +118,6 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.TAG_NAME }}
-          artifacts: ${{ needs.build.outputs.APK_FILE_PATH }}
+          artifacts: ${{ env.APK_FILE_PATH }}
           token: ${{ secrets.g_TOKEN }}
           generateReleaseNotes: true
