@@ -14,6 +14,14 @@ on:
       - '!.github/workflows/**'
 
 jobs:
+ debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Print GitHub Context
+        run: echo "GITHUB_REF: ${{ github.ref }}"
+        
   build:
     name: Build CI (Push)
     runs-on: ubuntu-latest
@@ -101,7 +109,9 @@ jobs:
         with:
           path: ${{ env.APK_FILE_PATH }}
           name: ${{ env.FILE_NAME }}
-          
+  
+ 
+        
   release:
     needs: build
     runs-on: ubuntu-latest
