@@ -140,6 +140,6 @@ jobs:
         if: startsWith(github.ref, 'refs/heads/')
         with:
           token: ${{ secrets.g_TOKEN}}
-          tag_name: ${{ env.TAG_NAME }}
+          tag_name: 123
           files: ${{ env.APK_FILE_PATH }}
           
