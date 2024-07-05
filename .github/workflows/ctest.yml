@@ -119,5 +119,5 @@ jobs:
         with:
           tag: ${{ env.TAG_NAME }}
           artifacts: ${{ needs.build.outputs.APK_FILE_PATH }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.g_TOKEN }}
           generateReleaseNotes: true
