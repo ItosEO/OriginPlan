@@ -150,5 +150,6 @@ jobs:
         with:
           token: ${{ secrets.g_TOKEN}}
           tag_name: "12313"
-          files: ${{ env.APK_FILE_PATH2 }}
+          files: |
+            ./*.apk
           
