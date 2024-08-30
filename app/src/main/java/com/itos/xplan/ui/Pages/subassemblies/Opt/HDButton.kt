@@ -43,14 +43,14 @@ fun HDButton() {
 fun HideHD() {
     OLog.i("隐藏HD", "Shizuku方案")
 
-    var data = app.ShizukuExec("settings get secure icon_blacklist".toByteArray())
+    var data = app.ShizukuExec_US("settings get secure icon_blacklist")
     OLog.i("隐藏HD", "当前黑名单列表: $data")
     data = data!!.trimEnd()
     data = data.replace(Regex(",+"), ",")
     data = data.replace(Regex("(,rotate,hd)+"), ",rotate,hd")
     data = "$data,rotate,hd"
     OLog.i("隐藏HD", "处理后黑名单列表: $data")
-    app.ShizukuExec("settings put secure icon_blacklist $data,rotate,hd".toByteArray())
+    app.ShizukuExec_US("settings put secure icon_blacklist $data,rotate,hd")
 //    if (OData.is_have_premissipn) {
 //        OLog.i("隐藏HD", "Java方案")
 //
@@ -65,14 +65,14 @@ fun HideHD() {
 //    } else {
 //        OLog.i("隐藏HD", "Shizuku方案")
 //
-//        var data = app.ShizukuExec("settings get secure icon_blacklist".toByteArray())
+//        var data = app.ShizukuExec_US("settings get secure icon_blacklist")
 //        OLog.i("隐藏HD", "当前黑名单列表: $data")
 //        data = data!!.trimEnd()
 //        data = data.replace(Regex(",+"), ",")
 //        data = data.replace(Regex("(,rotate,hd)+"), ",rotate,hd")
 //        data = "$data,rotate,hd"
 //        OLog.i("隐藏HD", "处理后黑名单列表: $data")
-//        app.ShizukuExec("settings put secure icon_blacklist $data,rotate,hd".toByteArray())
+//        app.ShizukuExec_US("settings put secure icon_blacklist $data,rotate,hd")
 //
 //    }
 }
@@ -80,7 +80,7 @@ fun HideHD() {
 fun UnHideHD() {
     OLog.i("还原HD", "Shizuku方案")
 
-    var data = app.ShizukuExec("settings get secure icon_blacklist".toByteArray())
+    var data = app.ShizukuExec_US("settings get secure icon_blacklist")
     data = data!!.trimEnd()
 
     OLog.i("还原HD", "待处理数据: $data")
@@ -93,7 +93,7 @@ fun UnHideHD() {
     resultString = resultString.replace(Regex(",+"), ",")
     OLog.i("还原HD", "处理结果: $resultString")
 
-    app.ShizukuExec("settings put secure icon_blacklist $resultString".toByteArray())//    if (OData.is_have_premissipn) {
+    app.ShizukuExec_US("settings put secure icon_blacklist $resultString")//    if (OData.is_have_premissipn) {
 //        OLog.i("还原HD", "Java方案")
 //
 //        var data = Settings.Secure.getString(app.contentResolver, "icon_blacklist")
@@ -113,7 +113,7 @@ fun UnHideHD() {
 //    } else {
 //        OLog.i("还原HD", "Shizuku方案")
 //
-//        var data = app.ShizukuExec("settings get secure icon_blacklist".toByteArray())
+//        var data = app.ShizukuExec_US("settings get secure icon_blacklist")
 //        data = data!!.trimEnd()
 //
 //        OLog.i("还原HD", "待处理数据: $data")
@@ -126,7 +126,7 @@ fun UnHideHD() {
 //        resultString = resultString.replace(Regex(",+"), ",")
 //        OLog.i("还原HD", "处理结果: $resultString")
 //
-//        app.ShizukuExec("settings put secure icon_blacklist $resultString".toByteArray())
+//        app.ShizukuExec_US("settings put secure icon_blacklist $resultString")
 //    }
 }
 
