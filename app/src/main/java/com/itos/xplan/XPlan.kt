@@ -331,12 +331,10 @@ class XPlan : AppCompatActivity() {
             iUserService = null
         }
     }
-    private val userServiceArgs = UserServiceArgs(
-        ComponentName(
+    private val userServiceArgs = UserServiceArgs(ComponentName(
             BuildConfig.APPLICATION_ID,
             UserService::class.java.getName()
-        )
-    )
+        ))
         .daemon(false)
         .processNameSuffix("adb_service")
         .debuggable(BuildConfig.DEBUG)
