@@ -4,14 +4,17 @@ import AboutPage
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.text.InputType
 import android.util.Log
 import android.widget.EditText
@@ -102,21 +105,26 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
+import rikka.shizuku.Shizuku.UserServiceArgs
 import rikka.shizuku.ShizukuRemoteProcess
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStream
+import java.util.regex.Matcher
+import java.util.regex.Pattern
+
 
 // TODO 拆Details页面
 
 class XPlan : AppCompatActivity() {
     val context: Context = this
     var ReturnValue = 0
-    var isRunner = false
+    var isRunning = false
     var h2: Thread? = null
     var h3: Thread? = null
     var isShizukuStart = true
     var isShizukuAuthorized = false
+    private var iUserService: IUserService? = null
     var show_notice: String = "暂无公告"
 
     private val pkglist = mutableListOf<AppInfo>()
@@ -150,8 +158,6 @@ class XPlan : AppCompatActivity() {
         }
         load_applist()
         app = this
-
-        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         // 3是a13，2是a12（service call），1是pm增强，0是pm
         when (Build.VERSION.SDK_INT) {
             Build.VERSION_CODES.TIRAMISU -> {
@@ -166,15 +172,24 @@ class XPlan : AppCompatActivity() {
                 SpUtils.setParam(context, "method", 1)
             }
         }
-        checkShizuku()
-        OUI.check_secure_premission()
-        Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
-        Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
+//        OUI.check_secure_premission
+        init_shizuku()
         guide()
         generateAppList(context)
         registerUser()
         update_notice()
         update_config()
+    }
+
+    private fun init_shizuku() {
+        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
+        // 绑定shizuku服务
+//        if (iUserService != null) {
+//            return;
+//        } else Shizuku.bindUserService(userServiceArgs, serviceConnection)
+        checkShizuku()
+        Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
+        Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
     }
 
     private fun load_applist() {
@@ -305,6 +320,30 @@ class XPlan : AppCompatActivity() {
         }
     }
 
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
+            Toast.makeText(app, "Shizuku服务连接成功", Toast.LENGTH_SHORT).show()
+            if (iBinder.pingBinder()) {
+                iUserService = IUserService.Stub.asInterface(iBinder)
+            }
+        }
+
+        override fun onServiceDisconnected(componentName: ComponentName) {
+            Toast.makeText(app, "Shizuku服务连接断开", Toast.LENGTH_SHORT).show()
+            iUserService = null
+        }
+    }
+
+    private val userServiceArgs = UserServiceArgs(
+        ComponentName(
+            BuildConfig.APPLICATION_ID,
+            UserService::class.java.getName()
+        )
+    )
+        .daemon(false)
+        .processNameSuffix("adb_service")
+        .debuggable(BuildConfig.DEBUG)
+        .version(BuildConfig.VERSION_CODE)
 
     private fun onRequestPermissionsResult() {
         checkShizuku()
@@ -315,6 +354,8 @@ class XPlan : AppCompatActivity() {
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
+        Shizuku.unbindUserService(userServiceArgs, serviceConnection, true);
+
     }
 
     private fun registerUser() {
@@ -469,14 +510,14 @@ class XPlan : AppCompatActivity() {
     }
 
     fun ShizukuExec(cmd: ByteArray): String? {
-        if (isRunner) {
+        if (isRunning) {
             return "正在执行其他操作"
         }
         if (!isShizukuStart || !isShizukuAuthorized) {
             Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
             return "Shizuku 状态异常"
         }
-        isRunner = true
+        isRunning = true
 
         val p: ShizukuRemoteProcess
         val op = arrayOfNulls<String>(1)
@@ -525,12 +566,70 @@ class XPlan : AppCompatActivity() {
             ReturnValue = p.exitValue()
             OLog.i("运行shell", "跑完了")
             p.destroyForcibly()
-            isRunner = false
+            isRunning = false
 
             return op[0]
         } catch (ignored: java.lang.Exception) {
         }
         return "null"
+    }
+
+    fun ShizukuExec_US(cmd: String): String? {
+        if (isRunning) {
+            return "正在执行其他操作"
+        }
+        if (!isShizukuStart || !isShizukuAuthorized) {
+            Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
+            return "Shizuku 状态异常"
+        }
+        isRunning = true
+
+        // 检查是否存在包含任意内容的双引号
+
+        val pattern: Pattern = Pattern.compile("\"([^\"]*)\"")
+        val matcher: Matcher = pattern.matcher(cmd)
+
+        val list = ArrayList<String>()
+        val pattern2: Pattern = Pattern.compile("\"([^\"]*)\"|(\\S+)")
+        val matcher2: Matcher = pattern2.matcher(cmd)
+        while (matcher2.find()) {
+            if (matcher2.group(1) != null) {
+                // 如果是引号包裹的内容，取group(1)
+                matcher2.group(1)?.let { list.add(it) }
+            } else {
+                // 否则取group(2)，即普通的单词
+                matcher2.group(2)?.let { list.add(it) }
+            }
+        }
+
+        // 这种方法可用于执行路径中带空格的命令，例如 ls /storage/0/emulated/temp dir/
+        // 当然也可以执行不带空格的命令，实际上是要强于另一种执行方式的
+        val rt = iUserService?.exec(cmd)
+//        val rt = iUserService?.execArr(list.toTypedArray())
+        isRunning = false
+        return rt
+        // 下面展示了两种不同的命令执行方法
+//        return if (matcher.find()) {
+//            val list = ArrayList<String>()
+//            val pattern2: Pattern = Pattern.compile("\"([^\"]*)\"|(\\S+)")
+//            val matcher2: Matcher = pattern2.matcher(cmd)
+//            while (matcher2.find()) {
+//                if (matcher2.group(1) != null) {
+//                    // 如果是引号包裹的内容，取group(1)
+//                    matcher2.group(1)?.let { list.add(it) }
+//                } else {
+//                    // 否则取group(2)，即普通的单词
+//                    matcher2.group(2)?.let { list.add(it) }
+//                }
+//            }
+//
+//            // 这种方法可用于执行路径中带空格的命令，例如 ls /storage/0/emulated/temp dir/
+//            // 当然也可以执行不带空格的命令，实际上是要强于另一种执行方式的
+//            iUserService.execArr(list.toTypedArray())
+//        } else {
+//            // 这种方法仅用于执行路径中不包含空格的命令，例如 ls /storage/0/emulated/
+//            iUserService.execLine(cmd)
+//        }
     }
 
     fun SetAppDisabled(
@@ -785,17 +884,30 @@ class XPlan : AppCompatActivity() {
             TopAppBar(title = { Text(text = "原·初") },
                 actions = {
                     IconButton(onClick = {
-                        val inputEditText = EditText(context)
-                        inputEditText.hint = "Terminal"
-                        inputEditText.inputType = InputType.TYPE_CLASS_TEXT
+                        if (isShizukuAuthorized && isShizukuStart) {
+                            Shizuku.bindUserService(userServiceArgs, serviceConnection)
+                        } else return@IconButton
+                        val inputEditText = EditText(context).apply {
+                            hint = "Terminal"
+                            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                            setSingleLine(false)
+                            // 可选：设置最小行数以显示更多的输入区域
+                            minLines = 2
+                            // 可选：设置最大行数（如果需要）
+                            maxLines = 5
+                        }
+
 
                         MaterialAlertDialogBuilder(context)
                             .setTitle("终端")
                             .setView(inputEditText)
                             .setPositiveButton(android.R.string.ok) { _, _ ->
                                 lifecycleScope.launch {
-                                    val result =
-                                        ShizukuExec(inputEditText.text.toString().toByteArray())
+//                                    val result =
+//                                        ShizukuExec(inputEditText.text.toString().toByteArray())
+                                    val cmd=inputEditText.text.toString()
+                                    val cmd2="echo 666;echo 777".trimIndent()
+                                    val result = ShizukuExec_US(cmd2)
                                     OLog.i("终端结果：", result!!)
                                     onTerminalResult(ReturnValue, result)
                                 }

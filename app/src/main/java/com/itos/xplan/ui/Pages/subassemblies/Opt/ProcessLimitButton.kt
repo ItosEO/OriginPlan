@@ -1,6 +1,7 @@
 package com.itos.xplan.ui.Pages.subassemblies.Opt
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -31,7 +32,7 @@ fun ProcessLimitButton(){
                 app.patchProcessLimit()
             }
         ) {
-            Text("调整Android进程设置", textAlign = TextAlign.Center)
+            Text("一键开启高刷应用", textAlign = TextAlign.Center)
         }
         Spacer(modifier = Modifier.width(25.dp))
         FilledTonalButton(
@@ -39,10 +40,11 @@ fun ProcessLimitButton(){
                 .size(width = 130.dp, height = 60.dp),
             shape = RoundedCornerShape(30),
             onClick = {
-                app.unpatchProcessLimit()
+//                app.unpatchProcessLimit()
+                Toast.makeText(app, "暂不支持", Toast.LENGTH_SHORT).show()
             }
         ) {
-            Text("还原\n进程设置", textAlign = TextAlign.Center)
+            Text("***", textAlign = TextAlign.Center)
         }
     }
 }
