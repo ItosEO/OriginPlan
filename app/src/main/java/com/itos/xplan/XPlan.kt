@@ -110,8 +110,6 @@ import rikka.shizuku.ShizukuRemoteProcess
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStream
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 
 // TODO 拆Details页面
@@ -124,7 +122,7 @@ class XPlan : AppCompatActivity() {
     var h3: Thread? = null
     var isShizukuStart = true
     var isShizukuAuthorized = false
-    private var iUserService: IUserService? = null
+    var iUserService: IUserService? = null
     var show_notice: String = "暂无公告"
 
     private val pkglist = mutableListOf<AppInfo>()
@@ -314,12 +312,11 @@ class XPlan : AppCompatActivity() {
 
     private fun init_shizuku() {
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
-        checkShizuku()
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
-        Shizuku.bindUserService(userServiceArgs, serviceConnection)
+        checkShizuku()
     }
-    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+    val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
 //            Toast.makeText(app, "Shizuku服务连接成功", Toast.LENGTH_SHORT).show()
             if (iBinder.pingBinder()) {
@@ -331,7 +328,7 @@ class XPlan : AppCompatActivity() {
             iUserService = null
         }
     }
-    private val userServiceArgs = UserServiceArgs(ComponentName(
+    val userServiceArgs = UserServiceArgs(ComponentName(
             BuildConfig.APPLICATION_ID,
             UserService::class.java.getName()
         ))
@@ -339,8 +336,6 @@ class XPlan : AppCompatActivity() {
         .processNameSuffix("adb_service")
         .debuggable(BuildConfig.DEBUG)
         .version(BuildConfig.VERSION_CODE)
-
-
     private fun onRequestPermissionsResult() {
         checkShizuku()
         Shizuku.bindUserService(userServiceArgs, serviceConnection)
@@ -351,8 +346,7 @@ class XPlan : AppCompatActivity() {
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
-        Shizuku.unbindUserService(userServiceArgs, serviceConnection, true);
-
+        Shizuku.unbindUserService(userServiceArgs, serviceConnection, true)
     }
 
     private fun registerUser() {
@@ -580,53 +574,9 @@ class XPlan : AppCompatActivity() {
             return "Shizuku 状态异常"
         }
         isRunning = true
-
-        // 检查是否存在包含任意内容的双引号
-
-        val pattern: Pattern = Pattern.compile("\"([^\"]*)\"")
-        val matcher: Matcher = pattern.matcher(cmd)
-
-        val list = ArrayList<String>()
-        val pattern2: Pattern = Pattern.compile("\"([^\"]*)\"|(\\S+)")
-        val matcher2: Matcher = pattern2.matcher(cmd)
-        while (matcher2.find()) {
-            if (matcher2.group(1) != null) {
-                // 如果是引号包裹的内容，取group(1)
-                matcher2.group(1)?.let { list.add(it) }
-            } else {
-                // 否则取group(2)，即普通的单词
-                matcher2.group(2)?.let { list.add(it) }
-            }
-        }
-
-        // 这种方法可用于执行路径中带空格的命令，例如 ls /storage/0/emulated/temp dir/
-        // 当然也可以执行不带空格的命令，实际上是要强于另一种执行方式的
         val rt = iUserService?.exec(cmd)
-//        val rt = iUserService?.execArr(list.toTypedArray())
         isRunning = false
         return rt
-        // 下面展示了两种不同的命令执行方法
-//        return if (matcher.find()) {
-//            val list = ArrayList<String>()
-//            val pattern2: Pattern = Pattern.compile("\"([^\"]*)\"|(\\S+)")
-//            val matcher2: Matcher = pattern2.matcher(cmd)
-//            while (matcher2.find()) {
-//                if (matcher2.group(1) != null) {
-//                    // 如果是引号包裹的内容，取group(1)
-//                    matcher2.group(1)?.let { list.add(it) }
-//                } else {
-//                    // 否则取group(2)，即普通的单词
-//                    matcher2.group(2)?.let { list.add(it) }
-//                }
-//            }
-//
-//            // 这种方法可用于执行路径中带空格的命令，例如 ls /storage/0/emulated/temp dir/
-//            // 当然也可以执行不带空格的命令，实际上是要强于另一种执行方式的
-//            iUserService.execArr(list.toTypedArray())
-//        } else {
-//            // 这种方法仅用于执行路径中不包含空格的命令，例如 ls /storage/0/emulated/
-//            iUserService.execLine(cmd)
-//        }
     }
 
     fun SetAppDisabled(

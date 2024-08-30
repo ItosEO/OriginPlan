@@ -29,10 +29,10 @@ public class UserService extends IUserService.Stub {
             out.flush();
             out.close();
             StringBuilder sb = new StringBuilder();
+            StringBuilder outputError = new StringBuilder();
+            StringBuilder outputNormal = new StringBuilder();
             new Thread(() -> {
                 try {
-                    StringBuilder outputNormal = new StringBuilder();
-
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                     String inline;
                     while ((inline = bufferedReader.readLine()) != null) {
@@ -41,15 +41,10 @@ public class UserService extends IUserService.Stub {
                         sb.append(inline).append("\n");
                     }
                     bufferedReader.close();
-
-                    Log.d("Shizuku错误输出", String.valueOf(outputNormal)); // 添加日志输出
-
                 } catch (IOException ignored) { }
             }).start();
             new Thread(() -> {
                 try {
-                    StringBuilder outputError = new StringBuilder();
-
                     BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
                     String inline;
                     while ((inline = bufferedReader.readLine()) != null) {
@@ -58,13 +53,11 @@ public class UserService extends IUserService.Stub {
                         sb.append(inline).append("\n");
                     }
                     bufferedReader.close();
-
-                    Log.d("Shizuku错误输出", String.valueOf(outputError)); // 添加日志输出
-
                 } catch (IOException ignored) { }
             }).start();
-
             process.waitFor();
+            if (!outputError.toString().isEmpty()) Log.d("[DEBUG] Shizuku错误输出", outputError.toString());
+            Log.d("[DEBUG] Shizuku正常输出", outputNormal.toString());
             return sb.toString();
         } catch (Exception e) {
             throw new RuntimeException(e);

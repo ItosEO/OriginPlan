@@ -125,6 +125,8 @@ object OShizuku {
                 Toast.LENGTH_LONG
             ).show()
         }
+         if (app.iUserService == null)
+             Shizuku.bindUserService(app.userServiceArgs, app.serviceConnection);
     }
     private val ParcelFileDescriptor.text
         get() = ParcelFileDescriptor.AutoCloseInputStream(this)
