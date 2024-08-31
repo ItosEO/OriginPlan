@@ -41,92 +41,29 @@ fun HDButton() {
 }
 
 fun HideHD() {
-    OLog.i("隐藏HD", "Shizuku方案")
+    var data = app.ShizukuExec_US("settings get secure icon_blacklist") ?: ""
+    val items = if (data.isNotEmpty()) data.split(",").toMutableList() else mutableListOf()
 
-    var data = app.ShizukuExec_US("settings get secure icon_blacklist")
-    OLog.i("隐藏HD", "当前黑名单列表: $data")
-    data = data!!.trimEnd()
-    data = data.replace(Regex(",+"), ",")
-    data = data.replace(Regex("(,rotate,hd)+"), ",rotate,hd")
-    data = "$data,rotate,hd"
-    OLog.i("隐藏HD", "处理后黑名单列表: $data")
-    app.ShizukuExec_US("settings put secure icon_blacklist $data,rotate,hd")
-//    if (OData.is_have_premissipn) {
-//        OLog.i("隐藏HD", "Java方案")
-//
-//        var data = Settings.Secure.getString(app.contentResolver, "icon_blacklist")
-//        OLog.i("隐藏HD", "当前黑名单列表: $data")
-//        data = data!!.trimEnd()
-//        data = data.replace(Regex(",+"), ",")
-//        data = "$data,rotate,hd"
-//        data = data.replace(Regex("(,rotate,hd)+"), ",rotate,hd")
-//        OLog.i("隐藏HD", "处理后黑名单列表: $data")
-//        Settings.Secure.putString(app.contentResolver, "icon_blacklist", data)
-//    } else {
-//        OLog.i("隐藏HD", "Shizuku方案")
-//
-//        var data = app.ShizukuExec_US("settings get secure icon_blacklist")
-//        OLog.i("隐藏HD", "当前黑名单列表: $data")
-//        data = data!!.trimEnd()
-//        data = data.replace(Regex(",+"), ",")
-//        data = data.replace(Regex("(,rotate,hd)+"), ",rotate,hd")
-//        data = "$data,rotate,hd"
-//        OLog.i("隐藏HD", "处理后黑名单列表: $data")
-//        app.ShizukuExec_US("settings put secure icon_blacklist $data,rotate,hd")
-//
-//    }
+    if (!items.contains("rotate")) {
+        items.add(0, "rotate")
+    }
+    if (!items.contains("hd")) {
+        items.add(0, "hd")
+    }
+    data = items.joinToString(",")
+    OLog.i("隐藏HD", data)
+    app.ShizukuExec_US ("settings put secure icon_blacklist $data")
+
 }
 
 fun UnHideHD() {
-    OLog.i("还原HD", "Shizuku方案")
+    var data = app.ShizukuExec_US("settings get secure icon_blacklist") ?: ""
+    val items = if (data.isNotEmpty()) data.split(",").toMutableList() else mutableListOf()
 
-    var data = app.ShizukuExec_US("settings get secure icon_blacklist")
-    data = data!!.trimEnd()
+    items.removeAll(listOf("rotate", "hd"))
+    data = items.joinToString(",")
+    OLog.i("还原HD", data)
 
-    OLog.i("还原HD", "待处理数据: $data")
-    val targets = listOf("hd")
-    // 构建正则表达式，使用 joinToString 将多个子串连接起来
-    val regex = targets.joinToString(separator = "|").toRegex()
-    // 使用正则表达式替换为""
-    var resultString = regex.replace(data, "")
-    resultString = resultString.replace(Regex("(,rotate)+"), ",rotate")
-    resultString = resultString.replace(Regex(",+"), ",")
-    OLog.i("还原HD", "处理结果: $resultString")
-
-    app.ShizukuExec_US("settings put secure icon_blacklist $resultString")//    if (OData.is_have_premissipn) {
-//        OLog.i("还原HD", "Java方案")
-//
-//        var data = Settings.Secure.getString(app.contentResolver, "icon_blacklist")
-//        data = data!!.trimEnd()
-//
-//        OLog.i("还原HD", "待处理数据: $data")
-//        val targets = listOf("hd")
-//        // 构建正则表达式，使用 joinToString 将多个子串连接起来
-//        val regex = targets.joinToString(separator = "|").toRegex()
-//        // 使用正则表达式替换为""
-//        var resultString = regex.replace(data, "")
-//        resultString = resultString.replace(Regex("(,rotate)+"), ",rotate")
-//        resultString = resultString.replace(Regex(",+"), ",")
-//        OLog.i("还原HD", "处理结果: $resultString")
-//
-//        Settings.Secure.putString(app.contentResolver, "icon_blacklist", resultString)
-//    } else {
-//        OLog.i("还原HD", "Shizuku方案")
-//
-//        var data = app.ShizukuExec_US("settings get secure icon_blacklist")
-//        data = data!!.trimEnd()
-//
-//        OLog.i("还原HD", "待处理数据: $data")
-//        val targets = listOf("hd")
-//        // 构建正则表达式，使用 joinToString 将多个子串连接起来
-//        val regex = targets.joinToString(separator = "|").toRegex()
-//        // 使用正则表达式替换为""
-//        var resultString = regex.replace(data, "")
-//        resultString = resultString.replace(Regex("(,rotate)+"), ",rotate")
-//        resultString = resultString.replace(Regex(",+"), ",")
-//        OLog.i("还原HD", "处理结果: $resultString")
-//
-//        app.ShizukuExec_US("settings put secure icon_blacklist $resultString")
-//    }
+    app.ShizukuExec_US("settings put secure icon_blacklist $data")
 }
 

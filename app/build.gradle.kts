@@ -18,8 +18,8 @@ android {
         applicationId = "com.itos.xplan"
         minSdk = 26
         targetSdk = 34
-        versionCode = 36
-        versionName = "1.8"
+        versionCode = 37
+        versionName = "1.7"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
