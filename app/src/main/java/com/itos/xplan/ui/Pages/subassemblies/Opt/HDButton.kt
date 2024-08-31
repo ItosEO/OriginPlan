@@ -11,8 +11,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.itos.xplan.XPlan.Companion.app
 import com.itos.xplan.utils.OLog
+import com.itos.xplan.utils.OShizuku.ShizukuExec_US
 
 @Composable
 fun HDButton() {
@@ -41,7 +41,7 @@ fun HDButton() {
 }
 
 fun HideHD() {
-    var data = app.ShizukuExec_US("settings get secure icon_blacklist") ?: ""
+    var data = ShizukuExec_US("settings get secure icon_blacklist") ?: ""
     val items = if (data.isNotEmpty()) data.split(",").toMutableList() else mutableListOf()
 
     if (!items.contains("rotate")) {
@@ -52,18 +52,18 @@ fun HideHD() {
     }
     data = items.joinToString(",")
     OLog.i("隐藏HD", data)
-    app.ShizukuExec_US ("settings put secure icon_blacklist $data")
+    ShizukuExec_US ("settings put secure icon_blacklist $data")
 
 }
 
 fun UnHideHD() {
-    var data = app.ShizukuExec_US("settings get secure icon_blacklist") ?: ""
+    var data = ShizukuExec_US("settings get secure icon_blacklist") ?: ""
     val items = if (data.isNotEmpty()) data.split(",").toMutableList() else mutableListOf()
 
     items.removeAll(listOf("rotate", "hd"))
     data = items.joinToString(",")
     OLog.i("还原HD", data)
 
-    app.ShizukuExec_US("settings put secure icon_blacklist $data")
+    ShizukuExec_US("settings put secure icon_blacklist $data")
 }
 

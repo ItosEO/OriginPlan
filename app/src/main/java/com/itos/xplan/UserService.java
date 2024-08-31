@@ -11,17 +11,18 @@ import java.io.OutputStream;
 public class UserService extends IUserService.Stub {
 
     @Override
-    public void destroy() throws RemoteException {
+    public void destroy() {
         System.exit(0);
     }
 
     @Override
-    public void exit() throws RemoteException {
+    public void exit() {
         destroy();
     }
 
     @Override
     public String exec(String cmd) {
+        Log.d("[DEBUG] Shizuku执行：", cmd);
         try {
             Process process = Runtime.getRuntime().exec("sh");
             OutputStream out = process.getOutputStream();

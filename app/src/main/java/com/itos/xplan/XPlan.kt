@@ -86,15 +86,14 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.xplan.datatype.AppInfo
-import com.itos.xplan.datatype.ConfigData
 import com.itos.xplan.ui.Pages.OptPage
 import com.itos.xplan.ui.theme.OriginPlanTheme
 import com.itos.xplan.utils.NetUtils
-import com.itos.xplan.utils.OData
 import com.itos.xplan.utils.OLog
 import com.itos.xplan.utils.OPackage
 import com.itos.xplan.utils.OPackage.getAppIconByPackageName
 import com.itos.xplan.utils.OShizuku
+import com.itos.xplan.utils.OShizuku.ShizukuExec_US
 import com.itos.xplan.utils.OShizuku.checkShizuku
 import com.itos.xplan.utils.OUI
 import com.itos.xplan.utils.SpUtils
@@ -104,8 +103,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
+import rikka.shizuku.Shizuku.OnBinderDeadListener
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
-import rikka.shizuku.Shizuku.UserServiceArgs
+import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import rikka.shizuku.ShizukuRemoteProcess
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -115,6 +115,7 @@ import java.io.OutputStream
 // TODO 拆Details页面
 
 class XPlan : AppCompatActivity() {
+    var shizukuServiceState = false
     val context: Context = this
     var ReturnValue = 0
     var isRunning = false
@@ -122,24 +123,12 @@ class XPlan : AppCompatActivity() {
     var h3: Thread? = null
     var isShizukuStart = true
     var isShizukuAuthorized = false
-    var iUserService: IUserService? = null
     var show_notice: String = "暂无公告"
 
     private val pkglist = mutableListOf<AppInfo>()
     val optlist = mutableListOf<AppInfo>()
 
-    private val requestPermissionResultListener =
-        Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
-            this.onRequestPermissionsResult()
-        }
-    private val BINDER_RECEVIED_LISTENER =
-        OnBinderReceivedListener {
-            checkShizuku()
-        }
-    private val BINDER_DEAD_LISTENER: Shizuku.OnBinderDeadListener =
-        Shizuku.OnBinderDeadListener {
-            checkShizuku()
-        }
+    var iUserService: IUserService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -179,7 +168,6 @@ class XPlan : AppCompatActivity() {
 //        Shizuku.bindUserService(userServiceArgs, serviceConnection)
 //        update_config()
     }
-
 
 
     private fun load_applist() {
@@ -287,60 +275,58 @@ class XPlan : AppCompatActivity() {
         }
     }
 
-    private fun update_config() {
-        val handler = CoroutineExceptionHandler { _, exception ->
-            // 在这里处理异常，例如打印日志、上报异常等
-            OLog.e("Update Config Exception:", exception)
-        }
 
-        lifecycleScope.launch(Dispatchers.IO + handler) {
-            // 后台工作
-            val config =
-                NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_config.json")
+    private val requestPermissionResultListener =
+        OnRequestPermissionResultListener { i: Int, i1: Int -> checkShizuku() }
 
-            // 切换到主线程进行 UI 操作
-            withContext(Dispatchers.Main) {
-                // UI 操作，例如显示 Toast
-                OData.configdata = JSONObject.parseObject(config, ConfigData::class.java)
-                OLog.i(
-                    "系统参数调优配置:",
-                    config + "\n" + OData.configdata.toString()
-                )
-            }
-        }
+
+    private val BINDER_RECEVIED_LISTENER: OnBinderReceivedListener = OnBinderReceivedListener {
+        shizukuServiceState = true
     }
+
+    private val BINDER_DEAD_LISTENER: OnBinderDeadListener = OnBinderDeadListener {
+        shizukuServiceState = false;
+        iUserService = null;
+    }
+
 
     private fun init_shizuku() {
         Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
         Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
-        checkShizuku()
     }
+
     val serviceConnection: ServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
-//            Toast.makeText(app, "Shizuku服务连接成功", Toast.LENGTH_SHORT).show()
+            Toast.makeText(app, "Shizuku服务连接成功", Toast.LENGTH_SHORT).show()
             if (iBinder.pingBinder()) {
                 iUserService = IUserService.Stub.asInterface(iBinder)
+            } else {
+                Toast.makeText(app, "Binder有问题", Toast.LENGTH_SHORT).show()
             }
         }
+
         override fun onServiceDisconnected(componentName: ComponentName) {
             Toast.makeText(app, "Shizuku服务连接断开", Toast.LENGTH_SHORT).show()
             iUserService = null
         }
     }
-    val userServiceArgs = UserServiceArgs(ComponentName(
+
+    val userServiceArgs = Shizuku.UserServiceArgs(
+        ComponentName(
             BuildConfig.APPLICATION_ID,
-            UserService::class.java.getName()
-        ))
+            UserService::class.qualifiedName!!
+        )
+    )
         .daemon(false)
-        .processNameSuffix("adb_service")
+        .processNameSuffix("XPLAN_USER_SERVICE")
         .debuggable(BuildConfig.DEBUG)
         .version(BuildConfig.VERSION_CODE)
-    private fun onRequestPermissionsResult() {
-        checkShizuku()
-        Shizuku.bindUserService(userServiceArgs, serviceConnection)
-    }
 
+    override fun onStart() {
+        super.onStart()
+        checkShizuku()
+    }
     override fun onDestroy() {
         super.onDestroy()
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
@@ -565,19 +551,6 @@ class XPlan : AppCompatActivity() {
         return "null"
     }
 
-    fun ShizukuExec_US(cmd: String): String? {
-        if (isRunning) {
-            return "正在执行其他操作"
-        }
-        if (!isShizukuStart || !isShizukuAuthorized) {
-            Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
-            return "Shizuku 状态异常"
-        }
-        isRunning = true
-        val rt = iUserService?.exec(cmd)
-        isRunning = false
-        return rt
-    }
 
     fun SetAppDisabled(
         isDisabled: MutableState<Boolean>,
