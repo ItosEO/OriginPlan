@@ -26,8 +26,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.itos.xplan.XPlan.Companion.app
 import com.itos.xplan.ui.Pages.subassemblies.Opt.HDButton
 import com.itos.xplan.ui.Pages.subassemblies.Opt.OptButton
-import com.itos.xplan.ui.Pages.subassemblies.Opt.ProcessLimitButton
-import com.itos.xplan.ui.Pages.subassemblies.Opt.Thermal_opt
 import com.itos.xplan.ui.theme.OriginPlanTheme
 import com.itos.xplan.utils.OData
 
@@ -92,12 +90,10 @@ fun OptPage() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center // 将子项垂直居中
         ) {
-
             OptButton()
-            Thermal_opt()
-            ProcessLimitButton()
+//            Thermal_opt()
+//            ProcessLimitButton()
             HDButton()
-
         }
     }
 }
