@@ -106,17 +106,18 @@ object OShizuku {
         }
     }
 
-     fun checkShizuku() {
+    fun checkShizuku() {
+        app.isShizukuStart = true
+        app.isShizukuAuthorized = false
         try {
             if (Shizuku.checkSelfPermission() != PackageManager.PERMISSION_GRANTED) Shizuku.requestPermission(
                 0
             ) else app.isShizukuAuthorized = true
-        } catch (e: java.lang.Exception) {
-            if (app.checkSelfPermission("moe.shizuku.manager.permission.API_V23") == PackageManager.PERMISSION_GRANTED) app.isShizukuAuthorized =
+        } catch (e: Exception) {
+            if (app.checkSelfPermission("moe.shizuku.manager.permission.API_V23") === PackageManager.PERMISSION_GRANTED) app.isShizukuAuthorized =
                 true
-            if (e.javaClass == IllegalStateException::class.java) {
-                app.isShizukuStart = false
-            }
+            if (e.javaClass == java.lang.IllegalStateException::class.java) app.isShizukuStart =
+                false
         }
         if (!app.isShizukuStart || !app.isShizukuAuthorized) {
             Toast.makeText(
@@ -125,7 +126,32 @@ object OShizuku {
                 Toast.LENGTH_LONG
             ).show()
         }
+        if (app.isShizukuAuthorized&& app.isShizukuStart && app.iUserService == null)
+            Shizuku.bindUserService(app.userServiceArgs, app.serviceConnection)
+        OLog.i("检查Shizuku状态", "运行: ${app.isShizukuStart}, 授权: ${app.isShizukuAuthorized}")
     }
+
+
+    var isRunning = false
+    fun ShizukuExec_US(shell: String): String? {
+        if (isRunning) {
+            return "正在执行其他操作"
+        }
+        checkShizuku()
+        if (!app.isShizukuStart || !app.isShizukuAuthorized) {
+            Toast.makeText(app, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
+            return "Shizuku 状态异常"
+        }
+        if (app.iUserService==null){
+            Shizuku.bindUserService(app.userServiceArgs, app.serviceConnection)
+            return "binder异常"
+        }
+        isRunning = true
+        val rt = app.iUserService?.exec(shell)
+        isRunning = false
+        return rt
+    }
+
     private val ParcelFileDescriptor.text
         get() = ParcelFileDescriptor.AutoCloseInputStream(this)
             .use { it.bufferedReader().readText() }

@@ -8,6 +8,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.itos.xplan.XPlan.Companion.app
+import com.itos.xplan.utils.OShizuku.ShizukuExec_US
 import java.io.IOException
 
 
@@ -21,7 +22,7 @@ object OUI {
             OLog.e("写入安全设置权限异常", e)
             OLog.i("写入安全设置权限异常", "$app.b $app.c")
             if (app.isShizukuStart && app.isShizukuAuthorized) {
-                val temp = app.ShizukuExec("pm grant com.itos.xplan android.permission.WRITE_SECURE_SETTINGS".toByteArray())
+                val temp = ShizukuExec_US("pm grant com.itos.xplan android.permission.WRITE_SECURE_SETTINGS")
                 if (temp == "") {
                     OData.is_have_premissipn = true
                 } else {
