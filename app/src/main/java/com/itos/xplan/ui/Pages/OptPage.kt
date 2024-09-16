@@ -29,20 +29,7 @@ import com.itos.xplan.ui.Pages.subassemblies.Opt.OptButton
 import com.itos.xplan.ui.theme.OriginPlanTheme
 import com.itos.xplan.utils.OData
 
-fun SettingsDebug(){
-    MaterialAlertDialogBuilder(app)
-        .setTitle("调试")
-        .setMessage("这是调试功能,您确定要使用吗?")
-        .setPositiveButton("OK"){_,_ ->
-            val temp=app.ShizukuExec(OData.configdata.debug.toByteArray())
-            MaterialAlertDialogBuilder(app)
-                .setTitle("调试信息")
-                .setMessage(temp)
-                .setPositiveButton("OK",null)
-                .show()
-        }
-        .show()
-}
+
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

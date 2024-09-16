@@ -4,14 +4,17 @@ import AboutPage
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import android.text.InputType
 import android.util.Log
 import android.widget.EditText
@@ -83,15 +86,14 @@ import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.itos.xplan.datatype.AppInfo
-import com.itos.xplan.datatype.ConfigData
 import com.itos.xplan.ui.Pages.OptPage
 import com.itos.xplan.ui.theme.OriginPlanTheme
 import com.itos.xplan.utils.NetUtils
-import com.itos.xplan.utils.OData
 import com.itos.xplan.utils.OLog
 import com.itos.xplan.utils.OPackage
 import com.itos.xplan.utils.OPackage.getAppIconByPackageName
 import com.itos.xplan.utils.OShizuku
+import com.itos.xplan.utils.OShizuku.ShizukuExec_US
 import com.itos.xplan.utils.OShizuku.checkShizuku
 import com.itos.xplan.utils.OUI
 import com.itos.xplan.utils.SpUtils
@@ -101,18 +103,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
+import rikka.shizuku.Shizuku.OnBinderDeadListener
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
+import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import rikka.shizuku.ShizukuRemoteProcess
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStream
 
+
 // TODO 拆Details页面
 
 class XPlan : AppCompatActivity() {
+    var shizukuServiceState = false
     val context: Context = this
     var ReturnValue = 0
-    var isRunner = false
+    var isRunning = false
     var h2: Thread? = null
     var h3: Thread? = null
     var isShizukuStart = true
@@ -122,18 +128,7 @@ class XPlan : AppCompatActivity() {
     private val pkglist = mutableListOf<AppInfo>()
     val optlist = mutableListOf<AppInfo>()
 
-    private val requestPermissionResultListener =
-        Shizuku.OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
-            this.onRequestPermissionsResult()
-        }
-    private val BINDER_RECEVIED_LISTENER =
-        OnBinderReceivedListener {
-            checkShizuku()
-        }
-    private val BINDER_DEAD_LISTENER: Shizuku.OnBinderDeadListener =
-        Shizuku.OnBinderDeadListener {
-            checkShizuku()
-        }
+    var iUserService: IUserService? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,8 +145,6 @@ class XPlan : AppCompatActivity() {
         }
         load_applist()
         app = this
-
-        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
         // 3是a13，2是a12（service call），1是pm增强，0是pm
         when (Build.VERSION.SDK_INT) {
             Build.VERSION_CODES.TIRAMISU -> {
@@ -166,16 +159,16 @@ class XPlan : AppCompatActivity() {
                 SpUtils.setParam(context, "method", 1)
             }
         }
-        checkShizuku()
-        OUI.check_secure_premission()
-        Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
-        Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
+//        OUI.check_secure_premission
+        init_shizuku()
         guide()
         generateAppList(context)
         registerUser()
         update_notice()
-        update_config()
+//        Shizuku.bindUserService(userServiceArgs, serviceConnection)
+//        update_config()
     }
+
 
     private fun load_applist() {
         lifecycleScope.launch(Dispatchers.IO) {
@@ -282,39 +275,64 @@ class XPlan : AppCompatActivity() {
         }
     }
 
-    private fun update_config() {
-        val handler = CoroutineExceptionHandler { _, exception ->
-            // 在这里处理异常，例如打印日志、上报异常等
-            OLog.e("Update Config Exception:", exception)
-        }
 
-        lifecycleScope.launch(Dispatchers.IO + handler) {
-            // 后台工作
-            val config =
-                NetUtils.Get("https://itos.codegang.top/share/XPlan/OriginOS/app_config.json")
+    private val requestPermissionResultListener =
+        OnRequestPermissionResultListener { i: Int, i1: Int -> checkShizuku() }
 
-            // 切换到主线程进行 UI 操作
-            withContext(Dispatchers.Main) {
-                // UI 操作，例如显示 Toast
-                OData.configdata = JSONObject.parseObject(config, ConfigData::class.java)
-                OLog.i(
-                    "系统参数调优配置:",
-                    config + "\n" + OData.configdata.toString()
-                )
+
+    private val BINDER_RECEVIED_LISTENER: OnBinderReceivedListener = OnBinderReceivedListener {
+        shizukuServiceState = true
+    }
+
+    private val BINDER_DEAD_LISTENER: OnBinderDeadListener = OnBinderDeadListener {
+        shizukuServiceState = false;
+        iUserService = null;
+    }
+
+
+    private fun init_shizuku() {
+        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
+        Shizuku.addBinderReceivedListenerSticky(BINDER_RECEVIED_LISTENER)
+        Shizuku.addBinderDeadListener(BINDER_DEAD_LISTENER)
+    }
+
+    val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(componentName: ComponentName, iBinder: IBinder) {
+            Toast.makeText(app, "Shizuku服务连接成功", Toast.LENGTH_SHORT).show()
+            if (iBinder.pingBinder()) {
+                iUserService = IUserService.Stub.asInterface(iBinder)
+            } else {
+                Toast.makeText(app, "Binder有问题", Toast.LENGTH_SHORT).show()
             }
         }
+
+        override fun onServiceDisconnected(componentName: ComponentName) {
+            Toast.makeText(app, "Shizuku服务连接断开", Toast.LENGTH_SHORT).show()
+            iUserService = null
+        }
     }
 
+    val userServiceArgs = Shizuku.UserServiceArgs(
+        ComponentName(
+            BuildConfig.APPLICATION_ID,
+            UserService::class.qualifiedName!!
+        )
+    )
+        .daemon(false)
+        .processNameSuffix("XPLAN_USER_SERVICE")
+        .debuggable(BuildConfig.DEBUG)
+        .version(BuildConfig.VERSION_CODE)
 
-    private fun onRequestPermissionsResult() {
+    override fun onStart() {
+        super.onStart()
         checkShizuku()
     }
-
     override fun onDestroy() {
         super.onDestroy()
         Shizuku.removeBinderReceivedListener(BINDER_RECEVIED_LISTENER)
         Shizuku.removeBinderDeadListener(BINDER_DEAD_LISTENER)
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
+        Shizuku.unbindUserService(userServiceArgs, serviceConnection, true)
     }
 
     private fun registerUser() {
@@ -324,15 +342,15 @@ class XPlan : AppCompatActivity() {
         var device_model = ""
         Log.d("登记用户", "$isShizukuStart $isShizukuAuthorized")
         try {
-//                os = ShizukuExec("getprop ro.vivo.os.build.display.id".getBytes()).trim();
-//                device_model = ShizukuExec("getprop ro.vivo.internet.name".getBytes()).trim();
-//                system_version = ShizukuExec("getprop ro.vivo.os.build.display.id".getBytes()).trim();
-//                deviceId = ShizukuExec("getprop ro.serialno".getBytes()).trim() + "_" + android.os.Build.DEVICE;
+//                os = ShizukuExec_US("getprop ro.vivo.os.build.display.id".getBytes()).trim();
+//                device_model = ShizukuExec_US("getprop ro.vivo.internet.name".getBytes()).trim();
+//                system_version = ShizukuExec_US("getprop ro.vivo.os.build.display.id".getBytes()).trim();
+//                deviceId = ShizukuExec_US("getprop ro.serialno".getBytes()).trim() + "_" + android.os.Build.DEVICE;
             os = SystemPropertiesProxy.get(context, "ro.vivo.os.build.display.id").trim()
             device_model = SystemPropertiesProxy.get(context, "ro.vivo.internet.name").trim()
             deviceId = SystemPropertiesProxy.get(context, "ro.serialno") + "_" + Build.DEVICE
             if (deviceId == "_" + Build.DEVICE) {
-                val sn = ShizukuExec("getprop ro.serialno".toByteArray())?.trim()
+                val sn = ShizukuExec_US("getprop ro.serialno")?.trim()
                 if (sn == "Shizuku 状态异常") {
                     Log.d("登记用户-error", "Shizuku 状态异常")
                     return
@@ -369,19 +387,19 @@ class XPlan : AppCompatActivity() {
             .setPositiveButton("确定") { _, _ ->
                 val t: String? = when (SpUtils.getParam(context, "method", 1)) {
                     3 -> {
-                        ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
+                        ShizukuExec_US("service call package 131 s16 ${appInfo.appPkg} i32 0 i32 0")
                     }
 
                     2 -> {
-                        ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 0 i32 0".toByteArray())
+                        ShizukuExec_US("service call package 134 s16 ${appInfo.appPkg} i32 0 i32 0")
                     }
 
                     1 -> {
-                        ShizukuExec("pm uninstall --user 0 ${appInfo.appPkg}".toByteArray())
+                        ShizukuExec_US("pm uninstall --user 0 ${appInfo.appPkg}")
                     }
 
                     else -> {
-                        ShizukuExec("pm uninstall ${appInfo.appPkg}".toByteArray())
+                        ShizukuExec_US("pm uninstall ${appInfo.appPkg}")
                     }
                 }
                 MaterialAlertDialogBuilder(context)
@@ -409,15 +427,15 @@ class XPlan : AppCompatActivity() {
                 Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
                 val t: String? = when (SpUtils.getParam(context, "method", 1)) {
                     3 -> {
-                        ShizukuExec("service call package 131 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
+                        ShizukuExec_US("service call package 131 s16 ${appInfo.appPkg} i32 1 i32 0")
                     }
 
                     2 -> {
-                        ShizukuExec("service call package 134 s16 ${appInfo.appPkg} i32 1 i32 0".toByteArray())
+                        ShizukuExec_US("service call package 134 s16 ${appInfo.appPkg} i32 1 i32 0")
                     }
 
                     else -> {
-                        ShizukuExec("pm install-existing ${appInfo.appPkg}".toByteArray())
+                        ShizukuExec_US("pm install-existing ${appInfo.appPkg}")
                     }
                 }
                 MaterialAlertDialogBuilder(context)
@@ -444,12 +462,12 @@ class XPlan : AppCompatActivity() {
 
     fun patchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
-        ShizukuExec("device_config set_sync_disabled_for_tests persistent;device_config put activity_manager max_cached_processes 2147483647;device_config put activity_manager max_phantom_processes 2147483647;echo success".toByteArray())
+        ShizukuExec_US("device_config set_sync_disabled_for_tests persistent;device_config put activity_manager max_cached_processes 2147483647;device_config put activity_manager max_phantom_processes 2147483647;echo success")
         MaterialAlertDialogBuilder(context)
             .setTitle("关闭缓存进程和虚进程数量限制")
             .setMessage("调整完成，是否立即重启")
             .setPositiveButton("立即重启") { _, _ ->
-                ShizukuExec("reboot".toByteArray())
+                ShizukuExec_US("reboot")
             }
             .setNegativeButton("暂不重启") { _, _ -> }
             .show()
@@ -457,26 +475,26 @@ class XPlan : AppCompatActivity() {
 
     fun unpatchProcessLimit() {
         Toast.makeText(context, "请稍等...", Toast.LENGTH_LONG).show()
-        ShizukuExec("device_config set_sync_disabled_for_tests none;device_config put activity_manager max_cached_processes 32;device_config put activity_manager max_phantom_processes 32".toByteArray())
+        ShizukuExec_US("device_config set_sync_disabled_for_tests none;device_config put activity_manager max_cached_processes 32;device_config put activity_manager max_phantom_processes 32")
         MaterialAlertDialogBuilder(context)
             .setTitle("还原缓存进程和虚进程数量限制")
             .setMessage("还原完成，是否立即重启")
             .setPositiveButton("立即重启") { _, _ ->
-                ShizukuExec("reboot".toByteArray())
+                ShizukuExec_US("reboot")
             }
             .setNegativeButton("暂不重启") { _, _ -> }
             .show()
     }
 
     fun ShizukuExec(cmd: ByteArray): String? {
-        if (isRunner) {
+        if (isRunning) {
             return "正在执行其他操作"
         }
         if (!isShizukuStart || !isShizukuAuthorized) {
             Toast.makeText(context, "Shizuku 状态异常", Toast.LENGTH_SHORT).show()
             return "Shizuku 状态异常"
         }
-        isRunner = true
+        isRunning = true
 
         val p: ShizukuRemoteProcess
         val op = arrayOfNulls<String>(1)
@@ -525,13 +543,14 @@ class XPlan : AppCompatActivity() {
             ReturnValue = p.exitValue()
             OLog.i("运行shell", "跑完了")
             p.destroyForcibly()
-            isRunner = false
+            isRunning = false
 
             return op[0]
         } catch (ignored: java.lang.Exception) {
         }
         return "null"
     }
+
 
     fun SetAppDisabled(
         isDisabled: MutableState<Boolean>,
@@ -785,17 +804,25 @@ class XPlan : AppCompatActivity() {
             TopAppBar(title = { Text(text = "原·初") },
                 actions = {
                     IconButton(onClick = {
-                        val inputEditText = EditText(context)
-                        inputEditText.hint = "Terminal"
-                        inputEditText.inputType = InputType.TYPE_CLASS_TEXT
+                        if (!isShizukuAuthorized || !isShizukuStart) return@IconButton
+                        val inputEditText = EditText(context).apply {
+                            hint = "Terminal"
+                            inputType =
+                                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                            setSingleLine(false)
+                            // 可选：设置最小行数以显示更多的输入区域
+                            minLines = 2
+                            // 可选：设置最大行数（如果需要）
+                            maxLines = 5
+                        }
+
 
                         MaterialAlertDialogBuilder(context)
                             .setTitle("终端")
                             .setView(inputEditText)
                             .setPositiveButton(android.R.string.ok) { _, _ ->
                                 lifecycleScope.launch {
-                                    val result =
-                                        ShizukuExec(inputEditText.text.toString().toByteArray())
+                                    val result = ShizukuExec_US(inputEditText.text.toString())
                                     OLog.i("终端结果：", result!!)
                                     onTerminalResult(ReturnValue, result)
                                 }
