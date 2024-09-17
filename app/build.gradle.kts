@@ -8,7 +8,7 @@ android {
     compileSdk = 34
     applicationVariants.all {
         outputs.all {
-            val ver = defaultConfig.versionName+"-${defaultConfig.versionCode}"
+            val ver = defaultConfig.versionName + "-${defaultConfig.versionCode}"
 
             (this as com.android.build.gradle.internal.api.BaseVariantOutputImpl).outputFileName =
                 "XPlan_$ver.apk"
@@ -18,45 +18,46 @@ android {
         applicationId = "com.itos.xplan"
         minSdk = 26
         targetSdk = 34
-        versionCode = 40
-        versionName = "1.9"
+        versionCode = 41
+        versionName = "2.0"
 
 //        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
 
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
+        buildTypes {
+            release {
+                isMinifyEnabled = false
+                proguardFiles(
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
+                )
+            }
         }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-    buildFeatures {
-        compose = true
-        aidl=true
-        buildConfig=true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.3"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        compileOptions {
+            sourceCompatibility = JavaVersion.VERSION_1_8
+            targetCompatibility = JavaVersion.VERSION_1_8
         }
-    }
+        kotlinOptions {
+            jvmTarget = "1.8"
+        }
+        composeOptions {
+            kotlinCompilerExtensionVersion = "1.5.14"
+        }
+        buildFeatures {
+            compose = true
+            aidl = true
+            buildConfig = true
+        }
 
-}
+        packaging {
+            resources {
+                excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            }
+        }
+
+    }
 }
 
 dependencies {
